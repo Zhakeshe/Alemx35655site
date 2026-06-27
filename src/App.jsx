@@ -16,16 +16,17 @@ const navItems = [
 
 // ── DATA ──────────────────────────────────────────────────────────────
 const teamMembers = [
-  { name: "Buxarbaev Zhaxan",   role: "Ментор",           img: "https://picsum.photos/seed/ax1/400/400" },
-  { name: "Zholbatyrov Elaman", role: "Ментор",           img: "https://picsum.photos/seed/ax2/400/400" },
-  { name: "Alisher",            role: "Капитан · Инженер",img: "https://picsum.photos/seed/ax3/400/400" },
-  { name: "NurauLET",           role: "Инженер",          img: "https://picsum.photos/seed/ax4/400/400" },
-  { name: "Zhaqsylyq",          role: "Main Coder",       img: "https://picsum.photos/seed/ax5/400/400" },
-  { name: "Zhienbek",           role: "Main Coder",       img: "https://picsum.photos/seed/ax6/400/400" },
-  { name: "Tamerlan",           role: "Designer",         img: "https://picsum.photos/seed/ax7/400/400" },
-  { name: "Zhandos",            role: "Auto Coder",       img: "https://picsum.photos/seed/ax8/400/400" },
-  { name: "Sabina",             role: "SMM",              img: "https://picsum.photos/seed/ax9/400/400" },
-  { name: "Tannur",             role: "SMM",              img: "https://picsum.photos/seed/ax10/400/400"},
+  { name: "Buxarbaev Zhaxan",   role: "Ментор",           img: "https://i.ibb.co.com/r2rX1ryJ/Zhaxan.jpg" },
+  { name: "Zholbatyrov Elaman", role: "Ментор",           img: "https://i.ibb.co.com/8g6Dz5yS/Elaman.jpg" },
+  { name: "Alisher",            role: "Капитан · Инженер",img: "https://i.ibb.co.com/hJY7nLB3/Alisher.jpg" },
+  { name: "Nurdaulet",          role: "Инженер",          img: "https://i.ibb.co.com/rLTctj6/nurda.jpg" },
+  { name: "Zhaqsylyq",          role: "Main Coder",       img: "https://i.ibb.co.com/3m4s1rSg/Zhorikk.jpg" },
+  { name: "Merey",              role: "Main Coder",       img: "https://i.ibb.co.com/nMSXzT58/Merey.jpg"},
+  { name: "Zhienbek",           role: "Junior Coder",     img: "https://i.ibb.co.com/Kj4YVMYk/zhora.jpg" },
+  { name: "Tamerlan",           role: "Designer",         img: "https://i.ibb.co.com/6JpzNW7D/Tamer.jpg" },
+  { name: "Zhandos",            role: "Auto Coder",       img: "https://i.ibb.co.com/5WJwH14n/Zhandos.jpg" },
+  { name: "Sabina",             role: "SMM",              img: "https://i.ibb.co.com/JR9ZR9Sj/sssabina.jpg" },
+  { name: "Tannur",             role: "SMM",              img: "https://i.ibb.co.com/bgmkFzPz/Tannur.jpg"},
 ];
 
 const stats = [
@@ -36,9 +37,9 @@ const stats = [
 ];
 
 const achievements = [
-  { img: "https://picsum.photos/seed/dip1/900/560", title: "Региональный чемпионат",  sub: "1-ші орын · FTC Kazakhstan 2024",   tag: "Чемпионат" },
-  { img: "https://picsum.photos/seed/dip2/900/560", title: "Engineering Award",        sub: "Инженерный диплом · 2024",           tag: "Диплом" },
-  { img: "https://picsum.photos/seed/dip3/900/560", title: "FTC Qualifier",            sub: "Квалификация FTC · IntoTheDeep",     tag: "Сертификат" },
+  { img: "https://i.ibb.co.com/FL6VpSFD/news.jpg", title: "Региональный чемпионат",  sub: "1-ші орын · FTC Kazakhstan 2024",   tag: "Чемпионат" },
+  { img: "https://i.ibb.co.com/dwTTmRY3/Batys.jpg", title: "Engineering Award",        sub: "Инженерный диплом · 2024",           tag: "Диплом" },
+  { img: "https://i.ibb.co.com/Hpr2LPrM/ftc.jpg", title: "FTC Qualifier",            sub: "Квалификация FTC · IntoTheDeep",     tag: "Сертификат" },
   { img: "https://picsum.photos/seed/dip4/900/560", title: "Innovation Challenge",     sub: "Лучший инновационный проект · 2024", tag: "Награда" },
 ];
 
