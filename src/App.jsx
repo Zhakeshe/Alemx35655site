@@ -1,8 +1,60 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion";
+import { motion, AnimatePresence, useMotionValue, useTransform, useSpring, useScroll } from "framer-motion";
 import { ExternalLink, ChevronDown, Pause, Play, RotateCcw } from "lucide-react";
 import Lenis from "lenis";
 import { useT, useLang } from "./i18n.jsx";
+
+// ── SCROLL PROGRESS ───────────────────────────────────────────────────
+function ScrollProgress() {
+  const { scrollYProgress } = useScroll();
+  const scaleX = useSpring(scrollYProgress, { stiffness: 280, damping: 28 });
+  return (
+    <motion.div
+      aria-hidden="true"
+      style={{
+        position:"fixed",bottom:0,left:0,right:0,height:"2.5px",
+        background:"linear-gradient(90deg,#7c3aed,#a855f7,#e879f9)",
+        transformOrigin:"0%",scaleX,zIndex:200,
+        boxShadow:"0 0 14px rgba(168,85,247,.8)",
+        pointerEvents:"none",
+      }}
+    />
+  );
+}
+
+// ── HERO PARTICLES ────────────────────────────────────────────────────
+const PARTICLES = [
+  {x:"7%",  y:"18%", s:3, dur:3.8, delay:0,   dy:-22, dx:10  },
+  {x:"17%", y:"72%", s:2, dur:4.5, delay:0.4, dy:-18, dx:-8  },
+  {x:"26%", y:"38%", s:4, dur:3.2, delay:0.8, dy:-28, dx:6   },
+  {x:"43%", y:"14%", s:2, dur:5.1, delay:1.2, dy:-14, dx:-12 },
+  {x:"56%", y:"62%", s:3, dur:4.0, delay:0.6, dy:-20, dx:8   },
+  {x:"66%", y:"28%", s:2, dur:3.6, delay:1.5, dy:-16, dx:-6  },
+  {x:"73%", y:"80%", s:4, dur:4.8, delay:0.2, dy:-25, dx:10  },
+  {x:"83%", y:"44%", s:3, dur:3.4, delay:1.0, dy:-19, dx:-9  },
+  {x:"91%", y:"24%", s:2, dur:5.0, delay:0.7, dy:-12, dx:7   },
+  {x:"49%", y:"87%", s:3, dur:4.2, delay:1.8, dy:-22, dx:-4  },
+  {x:"34%", y:"54%", s:2, dur:3.9, delay:2.1, dy:-15, dx:11  },
+  {x:"79%", y:"66%", s:4, dur:4.6, delay:0.3, dy:-26, dx:-7  },
+  {x:"12%", y:"50%", s:3, dur:4.3, delay:1.6, dy:-20, dx:5   },
+  {x:"60%", y:"90%", s:2, dur:3.7, delay:0.9, dy:-17, dx:-10 },
+];
+
+function HeroParticles() {
+  return (
+    <div className="hero-particles" aria-hidden="true">
+      {PARTICLES.map((p, i) => (
+        <motion.span
+          key={i}
+          className="hero-particle"
+          style={{ left:p.x, top:p.y, width:p.s, height:p.s }}
+          animate={{ y:[0,p.dy,0], x:[0,p.dx,0], opacity:[0.15,0.65,0.15], scale:[1,1.5,1] }}
+          transition={{ duration:p.dur, delay:p.delay, repeat:Infinity, ease:"easeInOut" }}
+        />
+      ))}
+    </div>
+  );
+}
 
 // ── NAV ──────────────────────────────────────────────────────────────
 const navItems = [
@@ -10,23 +62,22 @@ const navItems = [
   { key: "nav.robot",        href: "#robot" },
   { key: "nav.auto",         href: "#auto" },
   { key: "nav.portfolio",    href: "#portfolio" },
-  { key: "nav.season",       href: "#timeline" },
-  { key: "nav.achievements", href: "#extras" },
+  { key: "nav.season",    href: "#timeline" },
 ];
 
 // ── DATA ──────────────────────────────────────────────────────────────
 const teamMembers = [
-  { name: "Buxarbaev Zhaxan",   roleKey: "role.mentor",       img: "https://i.ibb.co.com/r2rX1ryJ/Zhaxan.jpg" },
-  { name: "Zholbatyrov Elaman", roleKey: "role.mentor",       img: "https://i.ibb.co.com/8g6Dz5yS/Elaman.jpg" },
-  { name: "Alisher",            roleKey: "role.captain",      img: "https://i.ibb.co.com/hJY7nLB3/Alisher.jpg" },
-  { name: "Nurdaulet",          roleKey: "role.engineer",     img: "https://i.ibb.co.com/rLTctj6/nurda.jpg" },
-  { name: "Zhaqsylyq",          roleKey: "role.main_coder",   img: "https://i.ibb.co.com/3m4s1rSg/Zhorikk.jpg" },
-  { name: "Merey",              roleKey: "role.main_coder",   img: "https://i.ibb.co.com/nMSXzT58/Merey.jpg" },
-  { name: "Zhienbek",           roleKey: "role.junior_coder", img: "https://i.ibb.co.com/Kj4YVMYk/zhora.jpg" },
-  { name: "Tamerlan",           roleKey: "role.designer",     img: "https://i.ibb.co.com/6JpzNW7D/Tamer.jpg" },
-  { name: "Zhandos",            roleKey: "role.auto_coder",   img: "https://i.ibb.co.com/5WJwH14n/Zhandos.jpg" },
-  { name: "Sabina",             roleKey: "role.smm",          img: "https://i.ibb.co.com/JR9ZR9Sj/sssabina.jpg" },
-  { name: "Tannur",             roleKey: "role.smm",          img: "https://i.ibb.co.com/bgmkFzPz/Tannur.jpg" },
+  { name: "Buxarbaev Zhaxan",   role: "Mentor",            img: "https://i.ibb.co.com/r2rX1ryJ/Zhaxan.jpg" },
+  { name: "Zholbatyrov Elaman", role: "Mentor",            img: "https://i.ibb.co.com/8g6Dz5yS/Elaman.jpg" },
+  { name: "Alisher",            role: "Captain · Engineer",img: "https://i.ibb.co.com/hJY7nLB3/Alisher.jpg" },
+  { name: "Nurdaulet",          role: "Engineer",          img: "https://i.ibb.co.com/rLTctj6/nurda.jpg" },
+  { name: "Zhaqsylyq",          role: "Main Coder",        img: "https://i.ibb.co.com/3m4s1rSg/Zhorikk.jpg" },
+  { name: "Merey",              role: "Main Coder",        img: "https://i.ibb.co.com/nMSXzT58/Merey.jpg" },
+  { name: "Zhienbek",           role: "Junior Coder",      img: "https://i.ibb.co.com/Kj4YVMYk/zhora.jpg" },
+  { name: "Tamerlan",           role: "Designer",          img: "https://i.ibb.co.com/6JpzNW7D/Tamer.jpg" },
+  { name: "Zhandos",            role: "Auto Coder",        img: "https://i.ibb.co.com/5WJwH14n/Zhandos.jpg" },
+  { name: "Sabina",             role: "SMM",               img: "https://i.ibb.co.com/JR9ZR9Sj/sssabina.jpg" },
+  { name: "Tannur",             role: "SMM",               img: "https://i.ibb.co.com/bgmkFzPz/Tannur.jpg" },
 ];
 
 const stats = [
@@ -160,7 +211,7 @@ function LangSwitcher() {
 function Navbar({ scrollY }) {
   const t       = useT();
   const opacity = useTransform(scrollY, [100, 360], [0, 1]);
-  const y       = useTransform(scrollY, [100, 360], [-22, 0]);
+  const y       = useTransform(scrollY, [100, 360], [22, 0]);
   const width   = useTransform(scrollY, [100, 360], ["8rem", "calc(100% - 2rem)"]);
   const linksOp = useTransform(scrollY, [280, 430], [0, 1]);
   const linksX  = useTransform(scrollY, [280, 430], [12, 0]);
@@ -186,6 +237,7 @@ function Hero({ scrollY }) {
   return (
     <section className="hero-section" id="top">
       <div className="hero-bg" aria-hidden="true" />
+      <HeroParticles />
 
       {/* 2 floating logos */}
       <div className="hero-float-logos" aria-hidden="true">
@@ -307,18 +359,28 @@ function RobotStage() {
 
 // ── TEAM ──────────────────────────────────────────────────────────────
 function TeamMember({ m, i }) {
-  const t = useT();
+  const rotXRaw = useMotionValue(0);
+  const rotYRaw = useMotionValue(0);
+  const rotX = useSpring(rotXRaw, { stiffness: 260, damping: 22 });
+  const rotY = useSpring(rotYRaw, { stiffness: 260, damping: 22 });
+
+  const onMove = e => {
+    const r = e.currentTarget.getBoundingClientRect();
+    rotXRaw.set(((e.clientY - r.top  - r.height / 2) / (r.height / 2)) * -9);
+    rotYRaw.set(((e.clientX - r.left - r.width  / 2) / (r.width  / 2)) *  9);
+  };
+  const onLeave = () => { rotXRaw.set(0); rotYRaw.set(0); };
+
   return (
     <motion.div
       className="member"
-      initial={{ opacity: 0, y: 48, scale: 0.84 }}
+      style={{ rotateX: rotX, rotateY: rotY, transformPerspective: 700 }}
+      initial={{ opacity: 0, y: 55, scale: 0.78 }}
       whileInView={{ opacity: 1, y: 0, scale: 1 }}
-      viewport={{ once: true, amount: 0.06 }}
-      transition={{
-        duration: 0.62,
-        delay: i * 0.055,
-        ease: [0.34, 1.56, 0.64, 1],
-      }}
+      viewport={{ once: true, amount: 0.05 }}
+      transition={{ duration: 0.72, delay: i * 0.055, ease: [0.34, 1.56, 0.64, 1] }}
+      onMouseMove={onMove}
+      onMouseLeave={onLeave}
     >
       <div className="member__avatar">
         <img src={m.img} alt={m.name} loading="lazy" />
@@ -326,7 +388,7 @@ function TeamMember({ m, i }) {
       <div className="member__overlay" />
       <div className="member__info">
         <p className="member__name">{m.name}</p>
-        <span className="member__role">{t(m.roleKey)}</span>
+        <span className="member__role">{m.role}</span>
       </div>
     </motion.div>
   );
@@ -688,11 +750,29 @@ function Footer() {
 function Sec({ id, eye, title, desc, children, cls="" }) {
   return (
     <section className={`section ${cls}`} id={id}>
-      <motion.div className="sec-head" initial={{opacity:0,y:20}} whileInView={{opacity:1,y:0}} viewport={{once:true,amount:0.15}} transition={{duration:0.52}}>
-        <span className="eyebrow">{eye}</span>
-        <h2>{title}</h2>
-        {desc && <p>{desc}</p>}
-      </motion.div>
+      <div className="sec-head">
+        <motion.span
+          className="eyebrow"
+          initial={{opacity:0, y:12, scale:0.88}}
+          whileInView={{opacity:1, y:0, scale:1}}
+          viewport={{once:true, amount:0.4}}
+          transition={{duration:0.48, ease:[0.34,1.56,0.64,1]}}
+        >{eye}</motion.span>
+        <motion.h2
+          initial={{opacity:0, y:32, filter:"blur(10px)"}}
+          whileInView={{opacity:1, y:0, filter:"blur(0px)"}}
+          viewport={{once:true, amount:0.3}}
+          transition={{duration:0.65, delay:0.08, ease:[0.16,1,0.3,1]}}
+        >{title}</motion.h2>
+        {desc && (
+          <motion.p
+            initial={{opacity:0, y:16}}
+            whileInView={{opacity:1, y:0}}
+            viewport={{once:true, amount:0.3}}
+            transition={{duration:0.55, delay:0.22}}
+          >{desc}</motion.p>
+        )}
+      </div>
       {children}
     </section>
   );
@@ -723,6 +803,7 @@ export default function App() {
 
   return (
     <div className="app-shell">
+      <ScrollProgress />
       <div className="bg-orb bg-orb--1" />
       <div className="bg-orb bg-orb--2" />
       <div className="bg-grid" />
@@ -737,8 +818,17 @@ export default function App() {
         </Sec>
 
         <Sec id="team" eye={t("sec.team.eye")} title={t("sec.team.title")} desc={t("sec.team.desc")}>
+          {/* Mentors — featured row */}
+          <div className="team-mentors">
+            {teamMembers.filter(m => m.role === "Mentor").map((m, i) => (
+              <TeamMember key={m.name} m={m} i={i} />
+            ))}
+          </div>
+          {/* Core team */}
           <div className="team-grid">
-            {teamMembers.map((m, i) => <TeamMember key={m.name} m={m} i={i} />)}
+            {teamMembers.filter(m => m.role !== "Mentor").map((m, i) => (
+              <TeamMember key={m.name} m={m} i={i + 2} />
+            ))}
           </div>
         </Sec>
 
