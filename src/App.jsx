@@ -265,7 +265,7 @@ function Hero({ scrollY }) {
             transition={{ delay: 0.46, duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
           >
             <motion.img
-              src="https://i.ibb.co.com/Y4WS8FDL/image-removebg-preview-2.png"
+              src="https://allwebs.ru/images/2026/06/28/03b86a2a75b11c48e1f5c1bdad7d9257.png"
               alt="AlemX #33655 Robot"
               className="hero-robot-img"
               animate={{ y: [0, -16, 0] }}
@@ -311,16 +311,23 @@ function TeamMember({ m, i }) {
   return (
     <motion.div
       className="member"
-      initial={{ opacity: 0, y: 28 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.1 }}
-      transition={{ duration: 0.44, delay: i * 0.045 }}
+      initial={{ opacity: 0, y: 48, scale: 0.84 }}
+      whileInView={{ opacity: 1, y: 0, scale: 1 }}
+      viewport={{ once: true, amount: 0.06 }}
+      transition={{
+        duration: 0.62,
+        delay: i * 0.055,
+        ease: [0.34, 1.56, 0.64, 1],
+      }}
     >
       <div className="member__avatar">
         <img src={m.img} alt={m.name} loading="lazy" />
       </div>
-      <p className="member__name">{m.name}</p>
-      <p className="member__role">{t(m.roleKey)}</p>
+      <div className="member__overlay" />
+      <div className="member__info">
+        <p className="member__name">{m.name}</p>
+        <span className="member__role">{t(m.roleKey)}</span>
+      </div>
     </motion.div>
   );
 }
