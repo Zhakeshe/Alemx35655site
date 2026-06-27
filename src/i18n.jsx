@@ -4,7 +4,7 @@ const T = {
   kz: {
     "nav.team": "Команда", "nav.robot": "Робот", "nav.auto": "Авто",
     "nav.portfolio": "Портфолио", "nav.season": "Маусым", "nav.achievements": "Жетістіктер",
-    "hero.tag": "First Tech Challenge · Қазақстан",
+    "hero.tag": "First Tech Challenge · Маңғыстау",
     "sec.robot.eye": "Біздің Роботымыз", "sec.robot.title": "Robot Stage",
     "sec.robot.desc": "AlemX #33655 командасының FTC роботы. 3D-модель жақын арада қосылады.",
     "sec.team.eye": "Команда", "sec.team.title": "Біздің Команда",
@@ -21,7 +21,7 @@ const T = {
     "stats.paths": "Auto маршрут", "stats.months": "Маусым айы",
     "btn.pause": "Пауза", "btn.play": "Старт", "btn.restart": "Рестарт", "btn.open": "Ашу",
     "pedro.sub": "FTC DECODE 2025–26 · Demo Auto Path",
-    "footer.tag": "FTC Robotics Team · Қазақстан",
+    "footer.tag": "FTC Robotics Team · Маңғыстау",
     "footer.copy": "© 2025 AlemX #33655. Барлық құқықтар қорғалған.",
     "bp.soon": "Model · Жақында",
 
@@ -43,7 +43,7 @@ const T = {
     "tl.4.date": "Наурыз 2025",   "tl.4.phase": "Инновация Сыйлығы","tl.4.desc": "Үздік инновациялық жоба · 2024–25 маусымы аяқталды.",
 
     // Жетістіктер
-    "ach.0.title": "Аймақтық Чемпионат",  "ach.0.sub": "1-ші орын · FTC Қазақстан 2024",   "ach.0.tag": "Чемпионат",
+    "ach.0.title": "Аймақтық Чемпионат",  "ach.0.sub": "1-ші орын · FTC Маңғыстау 2024",   "ach.0.tag": "Чемпионат",
     "ach.1.title": "Engineering Award",    "ach.1.sub": "Инженерлік диплом · 2024",          "ach.1.tag": "Диплом",
     "ach.2.title": "FTC Qualifier",        "ach.2.sub": "FTC Qualifier · IntoTheDeep",        "ach.2.tag": "Сертификат",
     "ach.3.title": "Innovation Challenge", "ach.3.sub": "Үздік инновациялық жоба · 2024",    "ach.3.tag": "Сыйлық",
@@ -51,7 +51,7 @@ const T = {
   ru: {
     "nav.team": "Команда", "nav.robot": "Робот", "nav.auto": "Авто",
     "nav.portfolio": "Портфолио", "nav.season": "Сезон", "nav.achievements": "Достижения",
-    "hero.tag": "First Tech Challenge · Казахстан",
+    "hero.tag": "First Tech Challenge · Мангистау",
     "sec.robot.eye": "Наш Робот", "sec.robot.title": "Robot Stage",
     "sec.robot.desc": "Кастомный FTC-робот команды AlemX #33655. 3D-модель появится здесь совсем скоро.",
     "sec.team.eye": "Команда", "sec.team.title": "Наша команда",
@@ -68,7 +68,7 @@ const T = {
     "stats.paths": "Auto маршрута", "stats.months": "Месяцев сезона",
     "btn.pause": "Пауза", "btn.play": "Старт", "btn.restart": "Рестарт", "btn.open": "Открыть",
     "pedro.sub": "FTC DECODE 2025–26 · Demo Auto Path",
-    "footer.tag": "FTC Robotics Team · Казахстан",
+    "footer.tag": "FTC Robotics Team · Мангистау",
     "footer.copy": "© 2025 AlemX #33655. Все права защищены.",
     "bp.soon": "Model · Скоро",
 
@@ -90,7 +90,7 @@ const T = {
     "tl.4.date": "Март 2025",     "tl.4.phase": "Награда за Инновации", "tl.4.desc": "Лучший инновационный проект · Сезон 2024–25 завершён.",
 
     // Достижения
-    "ach.0.title": "Региональный Чемпионат", "ach.0.sub": "1-е место · FTC Казахстан 2024",   "ach.0.tag": "Чемпионат",
+    "ach.0.title": "Региональный Чемпионат", "ach.0.sub": "1-е место · FTC Мангистау 2024",   "ach.0.tag": "Чемпионат",
     "ach.1.title": "Engineering Award",      "ach.1.sub": "Инженерный диплом · 2024",          "ach.1.tag": "Диплом",
     "ach.2.title": "FTC Qualifier",          "ach.2.sub": "Квалификация FTC · IntoTheDeep",    "ach.2.tag": "Сертификат",
     "ach.3.title": "Innovation Challenge",   "ach.3.sub": "Лучший инновационный проект · 2024","ach.3.tag": "Награда",
@@ -98,7 +98,7 @@ const T = {
   en: {
     "nav.team": "Team", "nav.robot": "Robot", "nav.auto": "Auto",
     "nav.portfolio": "Portfolio", "nav.season": "Season", "nav.achievements": "Awards",
-    "hero.tag": "First Tech Challenge · Kazakhstan",
+    "hero.tag": "First Tech Challenge · Mangistau",
     "sec.robot.eye": "Our Robot", "sec.robot.title": "Robot Stage",
     "sec.robot.desc": "AlemX #33655's custom FTC robot. A full 3D model is coming soon.",
     "sec.team.eye": "Team", "sec.team.title": "Our Team",
@@ -115,7 +115,7 @@ const T = {
     "stats.paths": "Auto paths", "stats.months": "Season months",
     "btn.pause": "Pause", "btn.play": "Play", "btn.restart": "Restart", "btn.open": "Open",
     "pedro.sub": "FTC DECODE 2025–26 · Demo Auto Path",
-    "footer.tag": "FTC Robotics Team · Kazakhstan",
+    "footer.tag": "FTC Robotics Team · Mangistau",
     "footer.copy": "© 2025 AlemX #33655. All rights reserved.",
     "bp.soon": "Model · Soon",
 
@@ -137,7 +137,7 @@ const T = {
     "tl.4.date": "March 2025",     "tl.4.phase": "Innovation Award",   "tl.4.desc": "Best Innovation Project · 2024–25 season completed.",
 
     // Achievements
-    "ach.0.title": "Regional Championship", "ach.0.sub": "1st place · FTC Kazakhstan 2024",   "ach.0.tag": "Championship",
+    "ach.0.title": "Regional Championship", "ach.0.sub": "1st place · FTC Mangistau 2024",   "ach.0.tag": "Championship",
     "ach.1.title": "Engineering Award",     "ach.1.sub": "Engineering diploma · 2024",         "ach.1.tag": "Diploma",
     "ach.2.title": "FTC Qualifier",         "ach.2.sub": "FTC Qualification · IntoTheDeep",    "ach.2.tag": "Certificate",
     "ach.3.title": "Innovation Challenge",  "ach.3.sub": "Best Innovation Project · 2024",     "ach.3.tag": "Award",

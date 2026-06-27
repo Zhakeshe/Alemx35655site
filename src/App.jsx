@@ -22,6 +22,47 @@ function ScrollProgress() {
   );
 }
 
+// ── SPLASH SCREEN ────────────────────────────────────────────────────
+function SplashScreen({ onDone }) {
+  return (
+    <motion.div
+      className="splash"
+      exit={{ opacity: 0, scale: 0.96, filter: "blur(12px)" }}
+      transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+    >
+      <motion.div
+        className="splash-logo"
+        initial={{ opacity: 0, y: 28, scale: 0.8 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.75, ease: [0.34, 1.56, 0.64, 1] }}
+      >
+        <span className="splash-name">AlemX</span>
+        <span className="splash-num">#33655</span>
+      </motion.div>
+      <motion.p
+        className="splash-tag"
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.42, duration: 0.5 }}
+      >FTC Robotics Team · Mangistau</motion.p>
+      <motion.div
+        className="splash-track"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.55 }}
+      >
+        <motion.div
+          className="splash-bar"
+          initial={{ scaleX: 0 }}
+          animate={{ scaleX: 1 }}
+          transition={{ delay: 0.65, duration: 1.1, ease: "easeInOut" }}
+          onAnimationComplete={onDone}
+        />
+      </motion.div>
+    </motion.div>
+  );
+}
+
 // ── HERO PARTICLES ────────────────────────────────────────────────────
 const PARTICLES = [
   {x:"7%",  y:"18%", s:3, dur:3.8, delay:0,   dy:-22, dx:10  },
@@ -232,7 +273,8 @@ function Hero({ scrollY }) {
   const t = useT();
   const scale   = useTransform(scrollY, [0, 380], [1, 0.78]);
   const opacity = useTransform(scrollY, [40, 360], [1, 0]);
-  const y       = useTransform(scrollY, [0, 380], [0, -110]);
+  const textY   = useTransform(scrollY, [0, 420], [0, -130]);
+  const robotY  = useTransform(scrollY, [0, 420], [0, -42]);
 
   return (
     <section className="hero-section" id="top">
@@ -263,13 +305,13 @@ function Hero({ scrollY }) {
 
       <motion.div
         className="hero-center"
-        style={{ scale, opacity, y }}
+        style={{ scale, opacity }}
         initial={{ opacity: 0, filter: "blur(18px)" }}
         animate={{ opacity: 1, filter: "blur(0px)" }}
         transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
       >
-        {/* Left: text */}
-        <div className="hero-text">
+        {/* Left: text — moves faster on scroll */}
+        <motion.div className="hero-text" style={{ y: textY }}>
           <motion.p
             className="hero-tag"
             initial={{ opacity: 0, y: 16 }}
@@ -307,10 +349,10 @@ function Hero({ scrollY }) {
             </motion.div>
             <span>Scroll</span>
           </motion.div>
-        </div>
+        </motion.div>
 
-        {/* Right: robot PNG */}
-        <div className="hero-robot-col">
+        {/* Right: robot PNG — moves slower on scroll */}
+        <motion.div className="hero-robot-col" style={{ y: robotY }}>
           <motion.div
             initial={{ opacity: 0, x: 40 }}
             animate={{ opacity: 1, x: 0 }}
@@ -324,7 +366,7 @@ function Hero({ scrollY }) {
               transition={{ delay: 1.3, duration: 4.2, repeat: Infinity, ease: "easeInOut" }}
             />
           </motion.div>
-        </div>
+        </motion.div>
       </motion.div>
     </section>
   );
@@ -782,6 +824,7 @@ function Sec({ id, eye, title, desc, children, cls="" }) {
 export default function App() {
   const t       = useT();
   const scrollY = useMotionValue(0);
+  const [splash, setSplash] = useState(true);
 
   useEffect(() => {
     const update = () => scrollY.set(window.scrollY);
@@ -803,6 +846,9 @@ export default function App() {
 
   return (
     <div className="app-shell">
+      <AnimatePresence>
+        {splash && <SplashScreen key="splash" onDone={() => setSplash(false)} />}
+      </AnimatePresence>
       <ScrollProgress />
       <div className="bg-orb bg-orb--1" />
       <div className="bg-orb bg-orb--2" />

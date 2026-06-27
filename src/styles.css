@@ -1,5 +1,37 @@
 @import url("https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Work+Sans:wght@300;400;500;600&display=swap");
 
+/* ── SPLASH ── */
+.splash {
+  position:fixed;inset:0;z-index:999;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;
+  background:radial-gradient(ellipse 80% 60% at 50% 40%,rgba(109,40,217,.18),transparent 70%),#040010;
+}
+.splash-logo {
+  display:flex;flex-direction:column;align-items:center;gap:.15rem;
+}
+.splash-name {
+  font-family:"Outfit",sans-serif;font-size:clamp(3rem,10vw,5.5rem);font-weight:900;
+  color:#fff;letter-spacing:-.04em;line-height:1;
+  text-shadow:0 0 60px rgba(168,85,247,.55),0 0 120px rgba(109,40,217,.3);
+}
+.splash-num {
+  font-family:"Outfit",sans-serif;font-size:clamp(1.1rem,3.5vw,1.8rem);font-weight:700;
+  color:var(--p3);letter-spacing:.06em;
+  text-shadow:0 0 30px rgba(192,132,252,.6);
+}
+.splash-tag {
+  color:rgba(216,180,254,.45);font-size:.85rem;letter-spacing:.12em;text-transform:uppercase;
+}
+.splash-track {
+  width:min(220px,50vw);height:2px;border-radius:2px;
+  background:rgba(168,85,247,.15);overflow:hidden;margin-top:.5rem;
+}
+.splash-bar {
+  height:100%;border-radius:2px;transform-origin:left;
+  background:linear-gradient(90deg,#7c3aed,#a855f7,#e879f9);
+  box-shadow:0 0 12px rgba(168,85,247,.8);
+}
+
 :root {
   color-scheme: dark;
   font-family: "Work Sans", system-ui, sans-serif;
@@ -486,7 +518,7 @@ img { display: block; max-width: 100%; }
 .ach-tag {
   align-self:flex-start;
   background:rgba(109,40,217,.82);border:1px solid rgba(216,180,254,.28);
-  color:var(--p4);font-size:.72rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--p4);font-size:.7rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
   padding:.3rem .75rem;border-radius:999px;backdrop-filter:blur(8px);
 }
 .ach-feat-info h3 {
@@ -499,8 +531,7 @@ img { display: block; max-width: 100%; }
 .ach-arrow {
   position:absolute;top:50%;transform:translateY(-50%);
   width:2.6rem;height:2.6rem;border-radius:50%;
-  background:rgba(4,0,16,.65);border:1px solid rgba(216,180,254,.2);
-  color:#fff;display:inline-flex;align-items:center;justify-content:center;
+  background:rgba(4,1,14,.55);border:1px solid rgba(168,85,247,.28);color:#fff;
   backdrop-filter:blur(8px);transition:background .2s,border-color .2s;z-index:2;
 }
 .ach-arrow:hover { background:rgba(109,40,217,.6);border-color:rgba(216,180,254,.42); }
