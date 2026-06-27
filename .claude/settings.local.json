@@ -3,7 +3,8 @@
     "allow": [
       "PowerShell($dest = \"C:\\\\Users\\\\Aktau\\\\AppData\\\\Local\\\\Temp\\\\pedro-viz.zip\"; Invoke-WebRequest -Uri \"https://github.com/Pedro-Pathing/Visualizer/archive/refs/heads/master.zip\" -OutFile $dest -TimeoutSec 60; Write-Host \"Size: $\\(\\(Get-Item $dest\\).Length\\)\")",
       "PowerShell(try { $r = Invoke-WebRequest -Uri \"http://localhost:5174/\" -TimeoutSec 5 -UseBasicParsing; \"Status: $\\($r.StatusCode\\)\" } catch { \"Error: $_\" })",
-      "PowerShell(try { $r = Invoke-WebRequest -Uri \"http://localhost:5174/field.webp\" -TimeoutSec 5 -UseBasicParsing; \"field.webp: $\\($r.StatusCode\\), $\\($r.RawContentLength\\) bytes\" } catch { \"Error: $_\" })"
+      "PowerShell(try { $r = Invoke-WebRequest -Uri \"http://localhost:5174/field.webp\" -TimeoutSec 5 -UseBasicParsing; \"field.webp: $\\($r.StatusCode\\), $\\($r.RawContentLength\\) bytes\" } catch { \"Error: $_\" })",
+      "Bash(npx vite *)"
     ]
   }
 }

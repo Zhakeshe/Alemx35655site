@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { motion, AnimatePresence, useMotionValue, useTransform, useSpring } from "framer-motion";
+import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion";
 import { ExternalLink, ChevronDown, Pause, Play, RotateCcw } from "lucide-react";
 import Lenis from "lenis";
 import { useT, useLang } from "./i18n.jsx";
@@ -16,17 +16,17 @@ const navItems = [
 
 // ── DATA ──────────────────────────────────────────────────────────────
 const teamMembers = [
-  { name: "Buxarbaev Zhaxan",   role: "Ментор",           img: "https://i.ibb.co.com/r2rX1ryJ/Zhaxan.jpg" },
-  { name: "Zholbatyrov Elaman", role: "Ментор",           img: "https://i.ibb.co.com/8g6Dz5yS/Elaman.jpg" },
-  { name: "Alisher",            role: "Капитан · Инженер",img: "https://i.ibb.co.com/hJY7nLB3/Alisher.jpg" },
-  { name: "Nurdaulet",          role: "Инженер",          img: "https://i.ibb.co.com/rLTctj6/nurda.jpg" },
-  { name: "Zhaqsylyq",          role: "Main Coder",       img: "https://i.ibb.co.com/3m4s1rSg/Zhorikk.jpg" },
-  { name: "Merey",              role: "Main Coder",       img: "https://i.ibb.co.com/nMSXzT58/Merey.jpg"},
-  { name: "Zhienbek",           role: "Junior Coder",     img: "https://i.ibb.co.com/Kj4YVMYk/zhora.jpg" },
-  { name: "Tamerlan",           role: "Designer",         img: "https://i.ibb.co.com/6JpzNW7D/Tamer.jpg" },
-  { name: "Zhandos",            role: "Auto Coder",       img: "https://i.ibb.co.com/5WJwH14n/Zhandos.jpg" },
-  { name: "Sabina",             role: "SMM",              img: "https://i.ibb.co.com/JR9ZR9Sj/sssabina.jpg" },
-  { name: "Tannur",             role: "SMM",              img: "https://i.ibb.co.com/bgmkFzPz/Tannur.jpg"},
+  { name: "Buxarbaev Zhaxan",   roleKey: "role.mentor",       img: "https://i.ibb.co.com/r2rX1ryJ/Zhaxan.jpg" },
+  { name: "Zholbatyrov Elaman", roleKey: "role.mentor",       img: "https://i.ibb.co.com/8g6Dz5yS/Elaman.jpg" },
+  { name: "Alisher",            roleKey: "role.captain",      img: "https://i.ibb.co.com/hJY7nLB3/Alisher.jpg" },
+  { name: "Nurdaulet",          roleKey: "role.engineer",     img: "https://i.ibb.co.com/rLTctj6/nurda.jpg" },
+  { name: "Zhaqsylyq",          roleKey: "role.main_coder",   img: "https://i.ibb.co.com/3m4s1rSg/Zhorikk.jpg" },
+  { name: "Merey",              roleKey: "role.main_coder",   img: "https://i.ibb.co.com/nMSXzT58/Merey.jpg" },
+  { name: "Zhienbek",           roleKey: "role.junior_coder", img: "https://i.ibb.co.com/Kj4YVMYk/zhora.jpg" },
+  { name: "Tamerlan",           roleKey: "role.designer",     img: "https://i.ibb.co.com/6JpzNW7D/Tamer.jpg" },
+  { name: "Zhandos",            roleKey: "role.auto_coder",   img: "https://i.ibb.co.com/5WJwH14n/Zhandos.jpg" },
+  { name: "Sabina",             roleKey: "role.smm",          img: "https://i.ibb.co.com/JR9ZR9Sj/sssabina.jpg" },
+  { name: "Tannur",             roleKey: "role.smm",          img: "https://i.ibb.co.com/bgmkFzPz/Tannur.jpg" },
 ];
 
 const stats = [
@@ -37,10 +37,10 @@ const stats = [
 ];
 
 const achievements = [
-  { img: "https://i.ibb.co.com/FL6VpSFD/news.jpg", title: "Региональный чемпионат",  sub: "1-ші орын · FTC Kazakhstan 2024",   tag: "Чемпионат" },
-  { img: "https://i.ibb.co.com/dwTTmRY3/Batys.jpg", title: "Engineering Award",        sub: "Инженерный диплом · 2024",           tag: "Диплом" },
-  { img: "https://i.ibb.co.com/Hpr2LPrM/ftc.jpg", title: "FTC Qualifier",            sub: "Квалификация FTC · IntoTheDeep",     tag: "Сертификат" },
-  { img: "https://picsum.photos/seed/dip4/900/560", title: "Innovation Challenge",     sub: "Лучший инновационный проект · 2024", tag: "Награда" },
+  { img: "https://i.ibb.co.com/FL6VpSFD/news.jpg",  titleKey: "ach.0.title", subKey: "ach.0.sub", tagKey: "ach.0.tag" },
+  { img: "https://i.ibb.co.com/dwTTmRY3/Batys.jpg", titleKey: "ach.1.title", subKey: "ach.1.sub", tagKey: "ach.1.tag" },
+  { img: "https://i.ibb.co.com/Hpr2LPrM/ftc.jpg",   titleKey: "ach.2.title", subKey: "ach.2.sub", tagKey: "ach.2.tag" },
+  { img: "https://picsum.photos/seed/dip4/900/560",  titleKey: "ach.3.title", subKey: "ach.3.sub", tagKey: "ach.3.tag" },
 ];
 
 const portfolioItems = [
@@ -56,11 +56,11 @@ const robotSpecs = [
 ];
 
 const timeline = [
-  { date: "Қыркүйек 2024", phase: "Season Kickoff",    desc: "FTC DECODE 2025–26 сезоны жарияланды. Команда 10 адаммен толықтырылды.",  col: "#a855f7" },
-  { date: "Қазан 2024",    phase: "Build Phase",       desc: "Mecanum drive, 4 REV мотор, intake + outtake. 200+ сағат жұмыс.",          col: "#7c3aed" },
-  { date: "Қараша 2024",   phase: "FTC Qualifier",     desc: "IntoTheDeep Qualifier · 3-ші орын. Бірінші ресми жарыс.",                  col: "#c084fc" },
-  { date: "Қаңтар 2025",   phase: "Regional Champion", desc: "Региональный чемпионат · 1-ші орын + Engineering Award.",                  col: "#ffc516" },
-  { date: "Наурыз 2025",   phase: "Innovation Award",  desc: "Лучший инновационный проект · 2024–25 сезон аяқталды.",                   col: "#f472b6" },
+  { dateKey: "tl.0.date", phaseKey: "tl.0.phase", descKey: "tl.0.desc", col: "#a855f7" },
+  { dateKey: "tl.1.date", phaseKey: "tl.1.phase", descKey: "tl.1.desc", col: "#7c3aed" },
+  { dateKey: "tl.2.date", phaseKey: "tl.2.phase", descKey: "tl.2.desc", col: "#c084fc" },
+  { dateKey: "tl.3.date", phaseKey: "tl.3.phase", descKey: "tl.3.desc", col: "#ffc516" },
+  { dateKey: "tl.4.date", phaseKey: "tl.4.phase", descKey: "tl.4.desc", col: "#f472b6" },
 ];
 
 // ── PEDRO PATHING FIELD UTILS ─────────────────────────────────────────
@@ -141,36 +141,6 @@ const socials = [
   { label: "GitHub",    href: "https://github.com/alemx33655",      Icon: IconGH },
 ];
 
-// ── CUSTOM CURSOR ─────────────────────────────────────────────────────
-function CustomCursor() {
-  const x  = useMotionValue(-200);
-  const y  = useMotionValue(-200);
-  const sx = useSpring(x, { stiffness: 110, damping: 18, mass: 0.55 });
-  const sy = useSpring(y, { stiffness: 110, damping: 18, mass: 0.55 });
-  const [over, setOver] = useState(false);
-  const [show, setShow] = useState(false);
-
-  useEffect(() => {
-    if (window.matchMedia("(pointer:coarse)").matches) return;
-    setShow(true);
-    const onMove = e => { x.set(e.clientX); y.set(e.clientY); };
-    const onOver = e => setOver(!!e.target.closest("a,button,[role=button]"));
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseover", onOver);
-    return () => {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseover", onOver);
-    };
-  }, [x, y]);
-
-  if (!show) return null;
-  return (
-    <>
-      <motion.div className="cur-dot" style={{ x, y }} />
-      <motion.div className={`cur-ring${over ? " cur-ring--ov" : ""}`} style={{ x: sx, y: sy }} />
-    </>
-  );
-}
 
 // ── LANG SWITCHER ─────────────────────────────────────────────────────
 function LangSwitcher() {
@@ -217,71 +187,92 @@ function Hero({ scrollY }) {
     <section className="hero-section" id="top">
       <div className="hero-bg" aria-hidden="true" />
 
-      {/* Floating robot specs */}
-      <div className="hero-specs" aria-hidden="true">
-        {robotSpecs.map((spec, i) => (
-          <motion.div
-            key={spec.label}
-            className={`hero-spec hero-spec--${i}`}
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.75 + i * 0.14, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-          >
-            <motion.div
-              animate={{ y: [0, i % 2 === 0 ? -7 : -5, 0] }}
-              transition={{ duration: 3.4 + i * 0.6, repeat: Infinity, ease: "easeInOut", delay: i * 0.45 }}
-            >
-              <span className="hero-spec__lbl">{spec.label}</span>
-              <strong className="hero-spec__val">{spec.value}</strong>
-            </motion.div>
-          </motion.div>
+      {/* 2 floating logos */}
+      <div className="hero-float-logos" aria-hidden="true">
+        {[
+          { src: "https://i.ibb.co.com/99zxvwKy/image-removebg-preview.png",  cls: "hero-float-logo--1", dy: -8,  dur: 3.8 },
+          { src: "https://i.ibb.co.com/LX6mNMLt/image-removebg-preview-1.png", cls: "hero-float-logo--2", dy: -6,  dur: 4.4 },
+        ].map(({ src, cls, dy, dur }, i) => (
+          <motion.img
+            key={i}
+            src={src}
+            alt=""
+            className={`hero-float-logo ${cls}`}
+            initial={{ opacity: 0, scale: 0.7 }}
+            animate={{ opacity: 0.88, scale: 1, y: [0, dy, 0] }}
+            transition={{
+              opacity: { delay: 0.9 + i * 0.15, duration: 0.6 },
+              scale:   { delay: 0.9 + i * 0.15, duration: 0.6 },
+              y:       { delay: 1.2, duration: dur, repeat: Infinity, ease: "easeInOut" },
+            }}
+          />
         ))}
       </div>
 
       <motion.div
         className="hero-center"
         style={{ scale, opacity, y }}
-        initial={{ opacity: 0, scale: 0.84, filter: "blur(24px)" }}
-        animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-        transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+        initial={{ opacity: 0, filter: "blur(18px)" }}
+        animate={{ opacity: 1, filter: "blur(0px)" }}
+        transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
       >
-        <motion.p
-          className="hero-tag"
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.6 }}
-        >
-          {t("hero.tag")}
-        </motion.p>
+        {/* Left: text */}
+        <div className="hero-text">
+          <motion.p
+            className="hero-tag"
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.6 }}
+          >
+            {t("hero.tag")}
+          </motion.p>
 
-        <motion.h1
-          className="hero-title"
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.32, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-        >
-          ALEMX
-          <span>#33655</span>
-        </motion.h1>
+          <motion.h1
+            className="hero-title"
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.32, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+          >
+            ALEMX
+            <span>#33655</span>
+          </motion.h1>
 
-        <motion.div
-          className="hero-line"
-          initial={{ scaleX: 0, opacity: 0 }}
-          animate={{ scaleX: 1, opacity: 1 }}
-          transition={{ delay: 0.6, duration: 0.65 }}
-        />
+          <motion.div
+            className="hero-line"
+            initial={{ scaleX: 0, opacity: 0 }}
+            animate={{ scaleX: 1, opacity: 1 }}
+            transition={{ delay: 0.62, duration: 0.65 }}
+          />
 
-        <motion.div
-          className="hero-scroll-hint"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.0, duration: 0.6 }}
-        >
-          <motion.div animate={{ y: [0, 7, 0] }} transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}>
-            <ChevronDown size={20} />
+          <motion.div
+            className="hero-scroll-hint"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.0, duration: 0.6 }}
+          >
+            <motion.div animate={{ y: [0, 7, 0] }} transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}>
+              <ChevronDown size={20} />
+            </motion.div>
+            <span>Scroll</span>
           </motion.div>
-          <span>Scroll</span>
-        </motion.div>
+        </div>
+
+        {/* Right: robot PNG */}
+        <div className="hero-robot-col">
+          <motion.div
+            initial={{ opacity: 0, x: 40 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.46, duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <motion.img
+              src="https://i.ibb.co.com/Y4WS8FDL/image-removebg-preview-2.png"
+              alt="AlemX #33655 Robot"
+              className="hero-robot-img"
+              animate={{ y: [0, -16, 0] }}
+              transition={{ delay: 1.3, duration: 4.2, repeat: Infinity, ease: "easeInOut" }}
+            />
+          </motion.div>
+        </div>
       </motion.div>
     </section>
   );
@@ -316,6 +307,7 @@ function RobotStage() {
 
 // ── TEAM ──────────────────────────────────────────────────────────────
 function TeamMember({ m, i }) {
+  const t = useT();
   return (
     <motion.div
       className="member"
@@ -328,7 +320,7 @@ function TeamMember({ m, i }) {
         <img src={m.img} alt={m.name} loading="lazy" />
       </div>
       <p className="member__name">{m.name}</p>
-      <p className="member__role">{m.role}</p>
+      <p className="member__role">{t(m.roleKey)}</p>
     </motion.div>
   );
 }
@@ -498,6 +490,7 @@ function CountStat({ num, suffix, label }) {
 
 // ── ACHIEVEMENTS CAROUSEL ─────────────────────────────────────────────
 function AchievementsCarousel() {
+  const t = useT();
   const [active, setActive] = useState(0);
   const timerRef = useRef(null);
   const n = achievements.length;
@@ -524,20 +517,20 @@ function AchievementsCarousel() {
           <motion.div
             key={active}
             className="ach-feat-inner"
-            initial={{ opacity: 0, scale: 1.04 }}
-            animate={{ opacity: 1, scale: 1 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 0.35 }}
           >
-            <img src={cur.img} alt={cur.title} className="ach-feat-img" />
+            <img src={cur.img} alt={t(cur.titleKey)} className="ach-feat-img" />
             <div className="ach-feat-overlay">
-              <span className="ach-tag">{cur.tag}</span>
+              <span className="ach-tag">{t(cur.tagKey)}</span>
               <div className="ach-feat-info">
                 <motion.h3 initial={{ opacity:0, y:14 }} animate={{ opacity:1, y:0 }} transition={{ delay:.1, duration:.3 }}>
-                  {cur.title}
+                  {t(cur.titleKey)}
                 </motion.h3>
                 <motion.p initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }} transition={{ delay:.18, duration:.26 }}>
-                  {cur.sub}
+                  {t(cur.subKey)}
                 </motion.p>
               </div>
             </div>
@@ -575,8 +568,8 @@ function AchievementsCarousel() {
       <div className="ach-circles">
         {achievements.map((item, i) => (
           <button key={i} className={`ach-circle${i === active ? " ach-circle--on" : ""}`}
-            onClick={() => go(i)} aria-label={item.title}>
-            <img src={item.img} alt={item.title} loading="lazy" />
+            onClick={() => go(i)} aria-label={t(item.titleKey)}>
+            <img src={item.img} alt={t(item.titleKey)} loading="lazy" />
           </button>
         ))}
       </div>
@@ -634,12 +627,13 @@ function PortfolioCard({ item, i }) {
 
 // ── TIMELINE ──────────────────────────────────────────────────────────
 function TimelineItem({ item, i }) {
+  const t = useT();
   const isRight = i % 2 === 0;
   const card = (
     <div className={`tl-content tl-content--${isRight ? "r" : "l"}`}>
-      <span className="tl-date">{item.date}</span>
-      <h4 className="tl-phase" style={{ color: item.col }}>{item.phase}</h4>
-      <p className="tl-desc">{item.desc}</p>
+      <span className="tl-date">{t(item.dateKey)}</span>
+      <h4 className="tl-phase" style={{ color: item.col }}>{t(item.phaseKey)}</h4>
+      <p className="tl-desc">{t(item.descKey)}</p>
     </div>
   );
   return (
@@ -722,7 +716,6 @@ export default function App() {
 
   return (
     <div className="app-shell">
-      <CustomCursor />
       <div className="bg-orb bg-orb--1" />
       <div className="bg-orb bg-orb--2" />
       <div className="bg-grid" />
