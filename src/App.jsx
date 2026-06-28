@@ -335,7 +335,7 @@ async function ftcGql(query, variables) {
 }
 
 const Q_SEARCH = `query($q:String!,$l:Int){teamsSearch(searchText:$q,limit:$l){number name location{city state country}rookieYear}}`;
-const Q_TEAM   = `query($n:Int!,$s:Int!){teamByNumber(number:$n){number name schoolName location{city state country}rookieYear quickStats(season:$s){count tot{value rank}auto{value rank}dc{value rank}eg{value rank}}events(season:$s){event{name location{city}start}stats{...on TeamEventStats2019{rank wins losses ties}...on TeamEventStats2022{rank wins losses ties}...on TeamEventStats2023{rank wins losses ties}...on TeamEventStats2024{rank wins losses ties}...on TeamEventStats2025{rank wins losses ties rp}}}}}`
+const Q_TEAM   = `query($n:Int!,$s:Int!){teamByNumber(number:$n){number name schoolName location{city state country}rookieYear quickStats(season:$s){count tot{value rank}auto{value rank}dc{value rank}eg{value rank}}events(season:$s){event{name location{city}start}stats{...on TeamEventStats2019{rank wins losses ties}...on TeamEventStats2022{rank wins losses ties}...on TeamEventStats2023{rank wins losses ties}...on TeamEventStats2024{rank wins losses ties}...on TeamEventStats2025{rank wins losses ties rp}}}matches(season:$s){alliance allianceRole match{hasBeenPlayed tournamentLevel matchNum description event{name}teams{teamNumber alliance onField noShow}scores{...on MatchScores2025{red{totalPoints autoPoints dcPoints}blue{totalPoints autoPoints dcPoints}}}}}}}`
 
 const timeline = [
   { dateKey: "tl.0.date", phaseKey: "tl.0.phase", descKey: "tl.0.desc", col: "#a855f7" },
@@ -1192,6 +1192,102 @@ function RankingSection() {
 }
 
 // ── FTC SCOUT TEAM SEARCH ─────────────────────────────────────────────
+function MatchRow({ mp, teamNum }) {
+  const [open, setOpen] = useState(false);
+  const m = mp.match;
+  if (!m.hasBeenPlayed) return null;
+
+  const s          = m.scores;
+  const myAlliance = mp.alliance;
+  const myScore    = s ? (myAlliance === "Red" ? s.red  : s.blue) : null;
+  const oppScore   = s ? (myAlliance === "Red" ? s.blue : s.red ) : null;
+  const won  = myScore && oppScore && myScore.totalPoints > oppScore.totalPoints;
+  const tied = myScore && oppScore && myScore.totalPoints === oppScore.totalPoints;
+
+  const redTeams  = m.teams.filter(t => t.alliance === "Red"  && t.onField);
+  const blueTeams = m.teams.filter(t => t.alliance === "Blue" && t.onField);
+  const myTeams   = myAlliance === "Red" ? redTeams  : blueTeams;
+  const oppTeams  = myAlliance === "Red" ? blueTeams : redTeams;
+  const partners  = myTeams.filter(t => t.teamNumber !== teamNum);
+
+  return (
+    <div className={`tm-row${open ? " tm-row--open" : ""}`}>
+      <button className="tm-row__header" onClick={() => setOpen(v => !v)}>
+        <span className={`tm-alliance tm-alliance--${myAlliance.toLowerCase()}`}>{myAlliance[0]}</span>
+        <span className="tm-desc">{m.description || `${m.tournamentLevel}-${m.matchNum}`}</span>
+        <span className={`tm-result tm-result--${won ? "win" : tied ? "tie" : "loss"}`}>
+          {won ? "W" : tied ? "T" : "L"}
+        </span>
+        <span className="tm-scoreline">
+          <span className="tm-score tm-score--red">{s?.red?.totalPoints ?? "—"}</span>
+          <span className="tm-score-sep">:</span>
+          <span className="tm-score tm-score--blue">{s?.blue?.totalPoints ?? "—"}</span>
+        </span>
+        <span className="tm-partners">
+          {partners.map(t => `#${t.teamNumber}`).join(" ")}
+          {oppTeams.length > 0 && <span className="tm-vs"> vs {oppTeams.map(t => `#${t.teamNumber}`).join(" ")}</span>}
+        </span>
+        <svg className={`tm-chevron${open ? " tm-chevron--open" : ""}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="14" height="14">
+          <path d="M6 9l6 6 6-6"/>
+        </svg>
+      </button>
+
+      {open && (
+        <div className="tm-row__detail">
+          <div className="tm-detail-grid">
+            {[{ label: "Red", teams: redTeams, score: s?.red }, { label: "Blue", teams: blueTeams, score: s?.blue }].map(col => (
+              <div key={col.label} className={`tm-detail-col tm-detail-col--${col.label.toLowerCase()}`}>
+                <div className="tm-detail-col-label">{col.label === "Red" ? "🔴" : "🔵"} {col.label}</div>
+                {col.teams.map(t => (
+                  <div key={t.teamNumber} className={`tm-detail-team${t.teamNumber === teamNum ? " tm-detail-team--you" : ""}`}>
+                    #{t.teamNumber}
+                    {t.teamNumber === teamNum && mp.allianceRole && (
+                      <span className="tm-role">{mp.allianceRole}</span>
+                    )}
+                  </div>
+                ))}
+                {col.score && (
+                  <div className="tm-detail-score">
+                    <span>Auto <b>{col.score.autoPoints}</b></span>
+                    <span>DC <b>{col.score.dcPoints}</b></span>
+                    <span className="tm-detail-total">Total <b>{col.score.totalPoints}</b></span>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TeamMatchesList({ matches, teamNum }) {
+  const played = matches.filter(mp => mp.match.hasBeenPlayed);
+  if (played.length === 0) return null;
+
+  const byEvent = {};
+  played.forEach(mp => {
+    const key = mp.match.event?.name || "Unknown";
+    if (!byEvent[key]) byEvent[key] = [];
+    byEvent[key].push(mp);
+  });
+
+  return (
+    <div className="tm-list">
+      <h4 className="ts-events-title">Ойындар · Season {FTC_SEASON}–{FTC_SEASON + 1}</h4>
+      {Object.entries(byEvent).map(([evName, evMatches]) => (
+        <div key={evName} className="tm-event-group">
+          <div className="tm-event-name">{evName}</div>
+          {evMatches.map((mp, i) => (
+            <MatchRow key={i} mp={mp} teamNum={teamNum} />
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function TeamDetailCard({ team, onBack, t }) {
   const qs = team.quickStats;
   const total = qs?.count ?? 0;
@@ -1270,6 +1366,10 @@ function TeamDetailCard({ team, onBack, t }) {
             </div>
           ))}
         </div>
+      )}
+
+      {team.matches?.length > 0 && (
+        <TeamMatchesList matches={team.matches} teamNum={team.number} />
       )}
     </motion.div>
   );
