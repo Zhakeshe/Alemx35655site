@@ -214,7 +214,7 @@ img { display: block; max-width: 100%; }
   position:fixed;bottom:1.2rem;left:50%;z-index:50;
   display:flex;align-items:center;justify-content:space-between;gap:.6rem;
   min-height:3.6rem;padding:.55rem 1.1rem;max-width:min(64rem,calc(100% - 2rem));
-  border-radius:999px;
+  border-radius:999px;overflow:hidden;
   background:
     linear-gradient(rgba(6,2,18,.97),rgba(6,2,18,.97)) padding-box,
     conic-gradient(from var(--nav-angle),#7c3aed 0%,#a855f7 30%,#e879f9 55%,#a855f7 75%,#7c3aed 100%) border-box;
@@ -1298,7 +1298,7 @@ img { display: block; max-width: 100%; }
 .ts-detail-name   { font-family:"Outfit",sans-serif;font-size:1.5rem;font-weight:800;color:#fff;line-height:1.1; }
 .ts-detail-school { font-size:.82rem;color:var(--muted);margin:.25rem 0 .1rem; }
 .ts-detail-loc    { font-size:.88rem;color:rgba(216,180,254,.6);margin-top:.15rem; }
-.ts-detail-rookie { font-size:.72rem;color:rgba(168,85,247,.6);font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-top:.4rem; }
+.ts-detail-rookie { font-size:.72rem;color:rgba(168,85,247,.6);font-weight:600;letter-spacing:.06em;text-transform:uppercase; }
 
 /* OPR stats grid */
 .ts-stats-grid {
@@ -1346,6 +1346,43 @@ img { display: block; max-width: 100%; }
 .ts-ev-rank  { font-family:"Outfit",sans-serif;font-size:1.1rem;font-weight:800;color:#a855f7; }
 .ts-ev-rank span { font-size:.72rem;font-weight:500;color:var(--muted); }
 .ts-ev-rec   { font-size:.72rem;color:var(--muted);margin-top:.1rem; }
+.ts-ev-rp    { font-size:.68rem;color:rgba(168,85,247,.6);margin-top:.18rem; }
+
+/* alliance partners row */
+.ts-ev-alliance {
+  display:flex;align-items:center;gap:.35rem;flex-wrap:wrap;margin-top:.45rem;
+}
+.ts-ev-role {
+  font-size:.62rem;font-weight:900;letter-spacing:.06em;text-transform:uppercase;
+  padding:.14rem .48rem;border-radius:4px;
+  background:rgba(168,85,247,.15);color:#c084fc;border:1px solid rgba(168,85,247,.3);
+}
+.ts-ev-ally {
+  font-size:.72rem;font-weight:700;color:rgba(216,180,254,.6);
+  padding:.12rem .42rem;border-radius:5px;
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);
+}
+
+/* team header row (rookie + ext link) */
+.ts-detail-row { display:flex;align-items:center;gap:.65rem;flex-wrap:wrap;margin-top:.1rem; }
+.ts-detail-rookie { font-size:.74rem;color:var(--muted); }
+.ts-ext-chip {
+  font-size:.66rem;font-weight:700;letter-spacing:.04em;
+  color:rgba(168,85,247,.7);border:1px solid rgba(168,85,247,.22);
+  padding:.12rem .5rem;border-radius:999px;
+  transition:color .16s,border-color .16s;white-space:nowrap;
+}
+.ts-ext-chip:hover { color:#d8b4fe;border-color:rgba(168,85,247,.5); }
+
+/* sub-page topbar external link */
+.sub-page__extlink {
+  margin-left:auto;flex-shrink:0;
+  font-size:.72rem;font-weight:700;letter-spacing:.04em;
+  color:rgba(168,85,247,.6);border:1px solid rgba(168,85,247,.2);
+  padding:.28rem .75rem;border-radius:999px;white-space:nowrap;
+  transition:color .16s,border-color .16s,background .16s;
+}
+.sub-page__extlink:hover { color:#d8b4fe;border-color:rgba(168,85,247,.5);background:rgba(168,85,247,.08); }
 
 /* Responsive */
 @media (max-width:900px){

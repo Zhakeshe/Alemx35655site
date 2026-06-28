@@ -335,7 +335,7 @@ async function ftcGql(query, variables) {
 }
 
 const Q_SEARCH = `query($q:String!,$l:Int){teamsSearch(searchText:$q,limit:$l){number name location{city state country}rookieYear}}`;
-const Q_TEAM   = `query($n:Int!,$s:Int!){teamByNumber(number:$n){number name schoolName location{city state country}rookieYear quickStats(season:$s){count tot{value rank}auto{value rank}dc{value rank}eg{value rank}}events(season:$s){event{name location{city}start}stats{...on TeamEventStats2019{rank wins losses ties}...on TeamEventStats2022{rank wins losses ties}...on TeamEventStats2023{rank wins losses ties}...on TeamEventStats2024{rank wins losses ties}...on TeamEventStats2025{rank wins losses ties rp}}}matches(season:$s){alliance allianceRole match{hasBeenPlayed tournamentLevel matchNum description event{name}teams{teamNumber alliance onField noShow}scores{...on MatchScores2025{red{totalPoints autoPoints dcPoints}blue{totalPoints autoPoints dcPoints}}}}}}}`
+const Q_TEAM   = `query($n:Int!,$s:Int!){teamByNumber(number:$n){number name schoolName location{city state country}rookieYear quickStats(season:$s){count tot{value rank}auto{value rank}dc{value rank}eg{value rank}}events(season:$s){event{name location{city}start}stats{...on TeamEventStats2019{rank wins losses ties}...on TeamEventStats2022{rank wins losses ties}...on TeamEventStats2023{rank wins losses ties}...on TeamEventStats2024{rank wins losses ties}...on TeamEventStats2025{rank wins losses ties rp}}awards{award{name}placement}}matches(season:$s){alliance allianceRole match{hasBeenPlayed tournamentLevel matchNum description event{name}teams{teamNumber alliance onField noShow}scores{...on MatchScores2025{red{totalPoints autoPoints dcPoints}blue{totalPoints autoPoints dcPoints}}}}}}}`
 
 const timeline = [
   { dateKey: "tl.0.date", phaseKey: "tl.0.phase", descKey: "tl.0.desc", col: "#a855f7" },
@@ -522,7 +522,7 @@ function Navbar({ scrollY, onOpenPage }) {
   return (
     <motion.header className="site-header" style={{ opacity, y, width }}>
       <a className="brand-mark" href="#top">AlemX <span>#33655</span></a>
-      <motion.nav className="site-nav" style={{ opacity: linksOp, x: linksX }}>
+      <motion.nav className="site-nav" style={{ opacity: linksOp }}>
         {navItems.map(n => <a key={n.href} href={n.href}>{t(n.key)}</a>)}
         <button className="nav-page-btn" onClick={() => onOpenPage("ftcscout")}>FTC Scout</button>
         <button className="nav-page-btn nav-page-btn--cup" onClick={() => onOpenPage("techcup")}>Tech Cup</button>
@@ -612,7 +612,7 @@ function MobileNav({ onOpenPage }) {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.08 + (navItems.length + 1) * 0.055, duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
               >
-                Tech Cup ⚡
+                Tech Cup
               </motion.button>
             </nav>
 
@@ -1299,6 +1299,20 @@ function TeamDetailCard({ team, onBack, t }) {
     { label: "Endgame OPR", value: qs.eg.value,   rank: qs.eg.rank,   pct: pct(qs.eg.rank),   col: "#f472b6" },
   ] : [];
 
+  // Derive elimination alliance partners per event from matches
+  const elimByEvent = {};
+  (team.matches || []).forEach(mp => {
+    if (!mp.match.hasBeenPlayed) return;
+    const lvl = mp.match.tournamentLevel;
+    if (!["DoubleElim","Semis","Finals"].includes(lvl)) return;
+    const evName = mp.match.event?.name;
+    if (!evName) return;
+    if (!elimByEvent[evName]) elimByEvent[evName] = { role: mp.allianceRole, partners: new Set() };
+    mp.match.teams
+      .filter(t2 => t2.alliance === mp.alliance && t2.teamNumber !== team.number && t2.onField)
+      .forEach(t2 => elimByEvent[evName].partners.add(t2.teamNumber));
+  });
+
   return (
     <motion.div
       className="ts-detail"
@@ -1318,7 +1332,17 @@ function TeamDetailCard({ team, onBack, t }) {
           <div className="ts-detail-loc">
             {[team.location?.city, team.location?.state, team.location?.country].filter(Boolean).join(" · ")}
           </div>
-          <div className="ts-detail-rookie">FTC since {team.rookieYear}</div>
+          <div className="ts-detail-row">
+            <div className="ts-detail-rookie">FTC since {team.rookieYear}</div>
+            <a
+              className="ts-ext-chip"
+              href={`https://ftcscout.org/teams/${team.number}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              ftcscout.org ↗
+            </a>
+          </div>
         </div>
       </div>
 
@@ -1342,29 +1366,45 @@ function TeamDetailCard({ team, onBack, t }) {
 
       {team.events?.length > 0 && (
         <div className="ts-events">
-          <h4 className="ts-events-title">Season {FTC_SEASON}–{FTC_SEASON + 1}</h4>
-          {team.events.map((ev, i) => (
-            <div key={i} className="ts-ev-row">
-              <div className="ts-ev-left">
-                <div className="ts-ev-name">{ev.event.name}</div>
-                <div className="ts-ev-loc">
-                  {ev.event.location?.city}
-                  {ev.event.start && ` · ${new Date(ev.event.start).toLocaleDateString("en-GB", { month: "short", year: "numeric" })}`}
+          <h4 className="ts-events-title">Іс-шаралар · Season {FTC_SEASON}–{FTC_SEASON + 1}</h4>
+          {team.events.map((ev, i) => {
+            const al = elimByEvent[ev.event.name];
+            return (
+              <div key={i} className="ts-ev-row">
+                <div className="ts-ev-left">
+                  <div className="ts-ev-name">{ev.event.name}</div>
+                  <div className="ts-ev-loc">
+                    {ev.event.location?.city}
+                    {ev.event.start && ` · ${new Date(ev.event.start).toLocaleDateString("en-GB", { month: "short", year: "numeric" })}`}
+                  </div>
+                  {al && al.partners.size > 0 && (
+                    <div className="ts-ev-alliance">
+                      <span className="ts-ev-role">{al.role}</span>
+                      {[...al.partners].map(n => (
+                        <span key={n} className="ts-ev-ally">#{n}</span>
+                      ))}
+                    </div>
+                  )}
+                  {ev.awards?.length > 0 && (
+                    <div className="ts-ev-awards">
+                      {ev.awards.map((a, j) => (
+                        <span key={j} className="ts-ev-award">
+                          {a.placement ? `${a.placement}. ` : ""}{a.award.name}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                {ev.awards?.length > 0 && (
-                  <div className="ts-ev-awards">
-                    {ev.awards.map((a, j) => <span key={j} className="ts-ev-award">🏆 {a.award.name}</span>)}
+                {ev.stats && (
+                  <div className="ts-ev-right">
+                    <div className="ts-ev-rank">#{ev.stats.rank}</div>
+                    <div className="ts-ev-rec">{ev.stats.wins}–{ev.stats.losses}–{ev.stats.ties}</div>
+                    {ev.stats.rp != null && <div className="ts-ev-rp">RP {ev.stats.rp.toFixed(2)}</div>}
                   </div>
                 )}
               </div>
-              {ev.stats && (
-                <div className="ts-ev-right">
-                  <div className="ts-ev-rank">#{ev.stats.rank}</div>
-                  <div className="ts-ev-rec">{ev.stats.wins}–{ev.stats.losses}–{ev.stats.ties}</div>
-                </div>
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -1778,6 +1818,9 @@ function FTCScoutPage({ onClose }) {
           <span className="sub-page__eye">FTC Scout · Global</span>
           <h2>{t("sec.search.title")}</h2>
         </div>
+        <a className="sub-page__extlink" href="https://ftcscout.org/teams/33655" target="_blank" rel="noopener noreferrer">
+          AlemX #33655 ↗
+        </a>
       </div>
       <div className="sub-page__body">
         <TeamSearchSection />
@@ -1788,9 +1831,9 @@ function FTCScoutPage({ onClose }) {
 
 // ── TECH CUP PAGE ─────────────────────────────────────────────────────
 const TC_TABS = [
-  { key: "teams",    icon: "👥" },
-  { key: "judging",  icon: "📋" },
-  { key: "schedule", icon: "🗺️" },
+  { key: "teams" },
+  { key: "judging" },
+  { key: "schedule" },
 ];
 
 function TechCupPage({ onClose }) {
@@ -1806,8 +1849,11 @@ function TechCupPage({ onClose }) {
         </button>
         <div className="sub-page__title">
           <span className="sub-page__eye">AlemX · 2026</span>
-          <h2>Tech Cup ⚡</h2>
+          <h2>Tech Cup</h2>
         </div>
+        <a className="sub-page__extlink" href="https://ftcscout.org/teams/33655" target="_blank" rel="noopener noreferrer">
+          #33655 ↗
+        </a>
       </div>
 
       <div className="tc-tabs">
@@ -1817,7 +1863,7 @@ function TechCupPage({ onClose }) {
             className={`tc-tab${tab === tb.key ? " tc-tab--on" : ""}`}
             onClick={() => setTab(tb.key)}
           >
-            {tb.icon} {t(`tc.tab.${tb.key}`)}
+            {t(`tc.tab.${tb.key}`)}
           </button>
         ))}
       </div>
