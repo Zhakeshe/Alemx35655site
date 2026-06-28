@@ -215,12 +215,14 @@ function HeroParticles() {
   return (
     <div className="hero-particles" aria-hidden="true">
       {PARTICLES.map((p, i) => (
-        <motion.span
+        <span
           key={i}
           className="hero-particle"
-          style={{ left:p.x, top:p.y, width:p.s, height:p.s }}
-          animate={{ y:[0,p.dy,0], x:[0,p.dx,0], opacity:[0.1,0.5,0.1] }}
-          transition={{ duration:p.dur, delay:p.delay, repeat:Infinity, ease:"easeInOut" }}
+          style={{
+            left:p.x, top:p.y, width:p.s, height:p.s,
+            '--dur':`${p.dur}s`, '--delay':`${p.delay}s`,
+            '--dy':`${p.dy}px`, '--dx':`${p.dx}px`,
+          }}
         />
       ))}
     </div>
@@ -651,24 +653,20 @@ function Hero({ scrollY }) {
       <HeroAurora />
       <HeroParticles />
 
-      {/* 2 floating logos */}
+      {/* 2 floating logos — float handled by CSS to avoid JS infinite loops */}
       <div className="hero-float-logos" aria-hidden="true">
         {[
-          { src: "https://i.ibb.co.com/99zxvwKy/image-removebg-preview.png",  cls: "hero-float-logo--1", dy: -8,  dur: 3.8 },
-          { src: "https://i.ibb.co.com/LX6mNMLt/image-removebg-preview-1.png", cls: "hero-float-logo--2", dy: -6,  dur: 4.4 },
-        ].map(({ src, cls, dy, dur }, i) => (
+          { src: "https://i.ibb.co.com/99zxvwKy/image-removebg-preview.png",  cls: "hero-float-logo--1" },
+          { src: "https://i.ibb.co.com/LX6mNMLt/image-removebg-preview-1.png", cls: "hero-float-logo--2" },
+        ].map(({ src, cls }, i) => (
           <motion.img
             key={i}
             src={src}
             alt=""
             className={`hero-float-logo ${cls}`}
             initial={{ opacity: 0, scale: 0.7 }}
-            animate={{ opacity: 0.88, scale: 1, y: [0, dy, 0] }}
-            transition={{
-              opacity: { delay: 0.9 + i * 0.15, duration: 0.6 },
-              scale:   { delay: 0.9 + i * 0.15, duration: 0.6 },
-              y:       { delay: 1.2, duration: dur, repeat: Infinity, ease: "easeInOut" },
-            }}
+            animate={{ opacity: 0.88, scale: 1 }}
+            transition={{ delay: 0.9 + i * 0.15, duration: 0.6 }}
           />
         ))}
       </div>
@@ -705,9 +703,7 @@ function Hero({ scrollY }) {
             animate={{ opacity: 1 }}
             transition={{ delay: 1.0, duration: 0.6 }}
           >
-            <motion.div animate={{ y: [0, 7, 0] }} transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}>
-              <ChevronDown size={20} />
-            </motion.div>
+            <span className="hero-chevron-bounce"><ChevronDown size={20} /></span>
             <span>Scroll</span>
           </motion.div>
         </motion.div>
@@ -719,12 +715,10 @@ function Hero({ scrollY }) {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.46, duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
           >
-            <motion.img
+            <img
               src="https://allwebs.ru/images/2026/06/28/03b86a2a75b11c48e1f5c1bdad7d9257.png"
               alt="AlemX #33655 Robot"
-              className="hero-robot-img"
-              animate={{ y: [0, -16, 0] }}
-              transition={{ delay: 1.3, duration: 4.2, repeat: Infinity, ease: "easeInOut" }}
+              className="hero-robot-img hero-robot-float"
             />
           </motion.div>
         </motion.div>
@@ -750,10 +744,19 @@ function RobotStage() {
     active:  true,
   });
   const [paused, setPaused] = useState(false);
+  const visibleRef = useRef(false);
+  const stageRef   = useRef(null);
+
+  useEffect(() => {
+    const obs = new IntersectionObserver(([e]) => { visibleRef.current = e.isIntersecting; }, { threshold: 0.05 });
+    if (stageRef.current) obs.observe(stageRef.current);
+    return () => obs.disconnect();
+  }, []);
 
   useEffect(() => {
     if (paused) return;
     const iv = setInterval(() => {
+      if (!visibleRef.current) return;
       setTele(prev => ({
         battery:  +(12.85 + Math.random() * 0.55).toFixed(2),
         motors:   MOTOR_TARGETS.map(t => Math.round(t + (Math.random() - 0.5) * 95)),
@@ -764,7 +767,7 @@ function RobotStage() {
         loop:     Math.round(17 + Math.random() * 9),
         active:   true,
       }));
-    }, 240);
+    }, 500);
     return () => clearInterval(iv);
   }, [paused]);
 
@@ -774,6 +777,7 @@ function RobotStage() {
 
   return (
     <motion.div
+      ref={stageRef}
       className="robot-stage"
       initial={{ opacity: 0, y: 28 }}
       whileInView={{ opacity: 1, y: 0 }}
@@ -941,11 +945,19 @@ function PedroVisualizer() {
   const [running, setRunning] = useState(true);
   const [prog, setProg]       = useState(0);
   const progRef               = useRef(0);
+  const visibleRef            = useRef(false);
+  const pedroRef              = useRef(null);
+
+  useEffect(() => {
+    const obs = new IntersectionObserver(([e]) => { visibleRef.current = e.isIntersecting; }, { threshold: 0.05 });
+    if (pedroRef.current) obs.observe(pedroRef.current);
+    return () => obs.disconnect();
+  }, []);
 
   useEffect(() => {
     let raf, last = 0;
     const tick = ts => {
-      if (running) {
+      if (running && visibleRef.current) {
         if (last) { progRef.current = (progRef.current + (ts - last) / 18000) % 1; setProg(progRef.current); }
         last = ts;
       } else { last = 0; }
@@ -967,6 +979,7 @@ function PedroVisualizer() {
 
   return (
     <motion.div
+      ref={pedroRef}
       className="pedro"
       initial={{ opacity: 0, y: 26 }}
       whileInView={{ opacity: 1, y: 0 }}
