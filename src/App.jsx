@@ -525,7 +525,7 @@ function Navbar({ scrollY, onOpenPage }) {
       <motion.nav className="site-nav" style={{ opacity: linksOp, x: linksX }}>
         {navItems.map(n => <a key={n.href} href={n.href}>{t(n.key)}</a>)}
         <button className="nav-page-btn" onClick={() => onOpenPage("ftcscout")}>FTC Scout</button>
-        <button className="nav-page-btn nav-page-btn--cup" onClick={() => onOpenPage("techcup")}>Tech Cup ⚡</button>
+        <button className="nav-page-btn nav-page-btn--cup" onClick={() => onOpenPage("techcup")}>Tech Cup</button>
       </motion.nav>
       <LangSwitcher />
     </motion.header>
