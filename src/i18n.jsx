@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from "react";
+﻿import { createContext, useContext, useState } from "react";
 
 const T = {
   kz: {
@@ -10,7 +10,7 @@ const T = {
     "sec.search.eye": "FTC Scout · Global", "sec.search.title": "Команда Іздеу",
     "sec.search.desc": "Кез келген FTC командасын нөмірі немесе аты бойынша іздеңіз — рейтинг, статистика және турнир нәтижелері.",
     "search.placeholder": "Команда аты немесе нөмірі... (мыс: 33655 немесе AlemX)",
-    "search.back": "Артқа", "search.empty": "Команда табылмады.", "search.hint": "FTC Scout дерекқорынан 14 000+ команда ақпараты қолжетімді",
+    "search.back": "Артқа", "search.empty": "Команда табылмады.", "search.hint": "FTC Scout дерекқорынан 14 000+ команда ақпараты қолжетімді", "tc.tab.teams": "Командалар", "tc.tab.judging": "Judging", "tc.tab.schedule": "Кесте", "tc.soon": "Жақын арада", "tc.soon.desc": "Ақпарат жарыс алдында жарияланады",
     "rank.record": "Жеңіс–Жеңіліс",
     "hero.tag": "First Tech Challenge · Маңғыстау",
     "sec.robot.eye": "Біздің Роботымыз", "sec.robot.title": "Robot Stage",
@@ -65,7 +65,7 @@ const T = {
     "sec.search.eye": "FTC Scout · Global", "sec.search.title": "Поиск команд",
     "sec.search.desc": "Найдите любую FTC команду по номеру или названию — рейтинг, статистика, турнирные результаты.",
     "search.placeholder": "Название или номер команды... (напр: 33655 или AlemX)",
-    "search.back": "Назад", "search.empty": "Команда не найдена.", "search.hint": "Доступно 14 000+ команд из базы FTC Scout",
+    "search.back": "Назад", "search.empty": "Команда не найдена.", "search.hint": "Доступно 14 000+ команд из базы FTC Scout", "tc.tab.teams": "Команды", "tc.tab.judging": "Judging", "tc.tab.schedule": "Расписание", "tc.soon": "Скоро", "tc.soon.desc": "Информация будет опубликована перед соревнованием",
     "rank.record": "Победы–Поражения",
     "hero.tag": "First Tech Challenge · Мангистау",
     "sec.robot.eye": "Наш Робот", "sec.robot.title": "Robot Stage",
@@ -120,7 +120,7 @@ const T = {
     "sec.search.eye": "FTC Scout · Global", "sec.search.title": "Team Search",
     "sec.search.desc": "Find any FTC team by number or name — rankings, OPR stats, and tournament results.",
     "search.placeholder": "Team name or number... (e.g. 33655 or AlemX)",
-    "search.back": "Back", "search.empty": "No teams found.", "search.hint": "Search across 14 000+ teams from the FTC Scout database",
+    "search.back": "Back", "search.empty": "No teams found.", "search.hint": "Search across 14 000+ teams from the FTC Scout database", "tc.tab.teams": "Teams", "tc.tab.judging": "Judging", "tc.tab.schedule": "Schedule", "tc.soon": "Coming soon", "tc.soon.desc": "Info will be published before the competition",
     "rank.record": "Win–Loss",
     "hero.tag": "First Tech Challenge · Mangistau",
     "sec.robot.eye": "Our Robot", "sec.robot.title": "Robot Stage",

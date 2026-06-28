@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence, useMotionValue, useTransform, useSpring, useScroll } from "framer-motion";
 import { ExternalLink, ChevronDown, Pause, Play, RotateCcw, Eye, X } from "lucide-react";
 import Lenis from "lenis";
@@ -235,7 +235,6 @@ const navItems = [
   { key: "nav.robot",     href: "#robot" },
   { key: "nav.auto",      href: "#auto" },
   { key: "nav.ranking",   href: "#ranking" },
-  { key: "nav.search",    href: "#search" },
   { key: "nav.portfolio", href: "#portfolio" },
 ];
 
@@ -335,8 +334,8 @@ async function ftcGql(query, variables) {
   return j.data;
 }
 
-const Q_SEARCH = `query($q:String!){teamsSearch(query:$q,limit:8){number name city state country rookieYear}}`;
-const Q_TEAM   = `query($n:Int!,$s:Int!){teamByNumber(number:$n){number name schoolName city state country rookieYear quickStats(season:$s){tot{value rank percentile}auto{value rank percentile}dc{value rank percentile}eg{value rank percentile}}events(season:$s){event{name city start}stats{rank wins losses ties teamsRanked}awards{award{name}}}}}`;
+const Q_SEARCH = `query($q:String!,$l:Int){teamsSearch(searchText:$q,limit:$l){number name location{city state country}rookieYear}}`;
+const Q_TEAM   = `query($n:Int!,$s:Int!){teamByNumber(number:$n){number name schoolName location{city state country}rookieYear quickStats(season:$s){count tot{value rank}auto{value rank}dc{value rank}eg{value rank}}events(season:$s){event{name location{city}start}stats{...on TeamEventStats2019{rank wins losses ties}...on TeamEventStats2022{rank wins losses ties}...on TeamEventStats2023{rank wins losses ties}...on TeamEventStats2024{rank wins losses ties}...on TeamEventStats2025{rank wins losses ties rp}}}}}`
 
 const timeline = [
   { dateKey: "tl.0.date", phaseKey: "tl.0.phase", descKey: "tl.0.desc", col: "#a855f7" },
@@ -512,7 +511,7 @@ function LangSwitcher() {
 }
 
 // ── NAVBAR ────────────────────────────────────────────────────────────
-function Navbar({ scrollY }) {
+function Navbar({ scrollY, onOpenPage }) {
   const t       = useT();
   const opacity = useTransform(scrollY, [100, 360], [0, 1]);
   const y       = useTransform(scrollY, [100, 360], [22, 0]);
@@ -525,6 +524,8 @@ function Navbar({ scrollY }) {
       <a className="brand-mark" href="#top">AlemX <span>#33655</span></a>
       <motion.nav className="site-nav" style={{ opacity: linksOp, x: linksX }}>
         {navItems.map(n => <a key={n.href} href={n.href}>{t(n.key)}</a>)}
+        <button className="nav-page-btn" onClick={() => onOpenPage("ftcscout")}>FTC Scout</button>
+        <button className="nav-page-btn nav-page-btn--cup" onClick={() => onOpenPage("techcup")}>Tech Cup ⚡</button>
       </motion.nav>
       <LangSwitcher />
     </motion.header>
@@ -532,7 +533,7 @@ function Navbar({ scrollY }) {
 }
 
 // ── MOBILE NAV ────────────────────────────────────────────────────────
-function MobileNav() {
+function MobileNav({ onOpenPage }) {
   const t = useT();
   const [open, setOpen] = useState(false);
 
@@ -595,6 +596,24 @@ function MobileNav() {
                   {t(n.key)}
                 </motion.a>
               ))}
+              <motion.button
+                className="mob-nav__link mob-nav__link--page"
+                onClick={() => { close(); onOpenPage("ftcscout"); }}
+                initial={{ opacity: 0, x: -18 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.08 + navItems.length * 0.055, duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              >
+                FTC Scout
+              </motion.button>
+              <motion.button
+                className="mob-nav__link mob-nav__link--page mob-nav__link--cup"
+                onClick={() => { close(); onOpenPage("techcup"); }}
+                initial={{ opacity: 0, x: -18 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.08 + (navItems.length + 1) * 0.055, duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              >
+                Tech Cup ⚡
+              </motion.button>
             </nav>
 
             <div className="mob-drawer__footer">
@@ -1175,11 +1194,13 @@ function RankingSection() {
 // ── FTC SCOUT TEAM SEARCH ─────────────────────────────────────────────
 function TeamDetailCard({ team, onBack, t }) {
   const qs = team.quickStats;
+  const total = qs?.count ?? 0;
+  const pct = (rank) => total > 0 ? +((1 - rank / total) * 100).toFixed(1) : null;
   const statItems = qs ? [
-    { label: "Total OPR",   ...qs.tot,  col: "#a855f7" },
-    { label: "Auto OPR",    ...qs.auto, col: "#7c3aed" },
-    { label: "TeleOp OPR",  ...qs.dc,   col: "#c084fc" },
-    { label: "Endgame OPR", ...qs.eg,   col: "#f472b6" },
+    { label: "Total OPR",   value: qs.tot.value,  rank: qs.tot.rank,  pct: pct(qs.tot.rank),  col: "#a855f7" },
+    { label: "Auto OPR",    value: qs.auto.value, rank: qs.auto.rank, pct: pct(qs.auto.rank), col: "#7c3aed" },
+    { label: "TeleOp OPR",  value: qs.dc.value,   rank: qs.dc.rank,   pct: pct(qs.dc.rank),   col: "#c084fc" },
+    { label: "Endgame OPR", value: qs.eg.value,   rank: qs.eg.rank,   pct: pct(qs.eg.rank),   col: "#f472b6" },
   ] : [];
 
   return (
@@ -1199,7 +1220,7 @@ function TeamDetailCard({ team, onBack, t }) {
           <h3 className="ts-detail-name">{team.name}</h3>
           {team.schoolName && <div className="ts-detail-school">{team.schoolName}</div>}
           <div className="ts-detail-loc">
-            {[team.city, team.state, team.country].filter(Boolean).join(" · ")}
+            {[team.location?.city, team.location?.state, team.location?.country].filter(Boolean).join(" · ")}
           </div>
           <div className="ts-detail-rookie">FTC since {team.rookieYear}</div>
         </div>
@@ -1215,9 +1236,9 @@ function TeamDetailCard({ team, onBack, t }) {
               </div>
               <div className="ts-stat-rank">{s.rank != null ? `#${s.rank}` : "—"}</div>
               <div className="ts-stat-bar">
-                <div className="ts-stat-fill" style={{ width: `${s.percentile ?? 0}%`, background: s.col }} />
+                <div className="ts-stat-fill" style={{ width: `${s.pct ?? 0}%`, background: s.col }} />
               </div>
-              <div className="ts-stat-pct">{s.percentile != null ? `${s.percentile.toFixed(1)}%` : ""}</div>
+              <div className="ts-stat-pct">{s.pct != null ? `${s.pct}%` : ""}</div>
             </div>
           ))}
         </div>
@@ -1231,7 +1252,7 @@ function TeamDetailCard({ team, onBack, t }) {
               <div className="ts-ev-left">
                 <div className="ts-ev-name">{ev.event.name}</div>
                 <div className="ts-ev-loc">
-                  {ev.event.city}
+                  {ev.event.location?.city}
                   {ev.event.start && ` · ${new Date(ev.event.start).toLocaleDateString("en-GB", { month: "short", year: "numeric" })}`}
                 </div>
                 {ev.awards?.length > 0 && (
@@ -1242,7 +1263,7 @@ function TeamDetailCard({ team, onBack, t }) {
               </div>
               {ev.stats && (
                 <div className="ts-ev-right">
-                  <div className="ts-ev-rank">#{ev.stats.rank}<span>/{ev.stats.teamsRanked}</span></div>
+                  <div className="ts-ev-rank">#{ev.stats.rank}</div>
                   <div className="ts-ev-rec">{ev.stats.wins}–{ev.stats.losses}–{ev.stats.ties}</div>
                 </div>
               )}
@@ -1275,7 +1296,7 @@ function TeamSearchSection() {
         const d = await ftcGql(Q_TEAM, { n: parseInt(raw, 10), s: FTC_SEASON });
         setResults(d.teamByNumber ? [d.teamByNumber] : []);
       } else {
-        const d = await ftcGql(Q_SEARCH, { q: raw });
+        const d = await ftcGql(Q_SEARCH, { q: raw, l: 8 });
         setResults(d.teamsSearch || []);
       }
     } catch (e) { setError(e.message); }
@@ -1345,7 +1366,7 @@ function TeamSearchSection() {
                 <div className="ts-card-body">
                   <div className="ts-card-name">{team.name}</div>
                   <div className="ts-card-loc">
-                    {[team.city, team.state, team.country].filter(Boolean).join(", ")}
+                    {[team.location?.city, team.location?.state, team.location?.country].filter(Boolean).join(", ")}
                   </div>
                 </div>
                 <div className="ts-card-meta">
@@ -1641,10 +1662,99 @@ function Sec({ id, eye, title, desc, children, cls="" }) {
   );
 }
 
+
+// ── FTC SCOUT PAGE ────────────────────────────────────────────────────
+function FTCScoutPage({ onClose }) {
+  const t = useT();
+  useEffect(() => { document.body.style.overflow = "hidden"; return () => { document.body.style.overflow = ""; }; }, []);
+  return (
+    <div className="sub-page">
+      <div className="sub-page__topbar">
+        <button className="sub-page__back" onClick={onClose}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="18" height="18"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          {t("search.back")}
+        </button>
+        <div className="sub-page__title">
+          <span className="sub-page__eye">FTC Scout · Global</span>
+          <h2>{t("sec.search.title")}</h2>
+        </div>
+      </div>
+      <div className="sub-page__body">
+        <TeamSearchSection />
+      </div>
+    </div>
+  );
+}
+
+// ── TECH CUP PAGE ─────────────────────────────────────────────────────
+const TC_TABS = [
+  { key: "teams",    icon: "👥" },
+  { key: "judging",  icon: "📋" },
+  { key: "schedule", icon: "🗺️" },
+];
+
+function TechCupPage({ onClose }) {
+  const t = useT();
+  const [tab, setTab] = useState("teams");
+  useEffect(() => { document.body.style.overflow = "hidden"; return () => { document.body.style.overflow = ""; }; }, []);
+  return (
+    <div className="sub-page">
+      <div className="sub-page__topbar">
+        <button className="sub-page__back" onClick={onClose}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="18" height="18"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          {t("search.back")}
+        </button>
+        <div className="sub-page__title">
+          <span className="sub-page__eye">AlemX · 2026</span>
+          <h2>Tech Cup ⚡</h2>
+        </div>
+      </div>
+
+      <div className="tc-tabs">
+        {TC_TABS.map(tb => (
+          <button
+            key={tb.key}
+            className={`tc-tab${tab === tb.key ? " tc-tab--on" : ""}`}
+            onClick={() => setTab(tb.key)}
+          >
+            {tb.icon} {t(`tc.tab.${tb.key}`)}
+          </button>
+        ))}
+      </div>
+
+      <div className="sub-page__body">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={tab}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.26 }}
+          >
+            <TechCupComingSoon label={t(`tc.tab.${tab}`)} t={t} />
+          </motion.div>
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+}
+
+function TechCupComingSoon({ label, t }) {
+  return (
+    <div className="tc-soon">
+      <div className="tc-soon__pulse" />
+      <div className="tc-soon__icon">⚡</div>
+      <h3 className="tc-soon__title">{t("tc.soon")}</h3>
+      <p className="tc-soon__desc">{t("tc.soon.desc")}</p>
+      <div className="tc-soon__badge">{label}</div>
+    </div>
+  );
+}
 // ── APP ───────────────────────────────────────────────────────────────
 export default function App() {
-  const t       = useT();
-  const scrollY = useMotionValue(0);
+  const t          = useT();
+  const scrollY    = useMotionValue(0);
+  const [pageView, setPageView] = useState(null);
 
   useEffect(() => {
     const lenis = new Lenis({
@@ -1667,8 +1777,8 @@ export default function App() {
       <div className="bg-orb bg-orb--2" />
       <div className="bg-grid" />
 
-      <Navbar scrollY={scrollY} />
-      <MobileNav />
+      <Navbar scrollY={scrollY} onOpenPage={setPageView} />
+      <MobileNav onOpenPage={setPageView} />
 
       <main>
         <Hero scrollY={scrollY} />
@@ -1698,10 +1808,6 @@ export default function App() {
           <RankingSection />
         </Sec>
 
-        <Sec id="search" eye={t("sec.search.eye")} title={t("sec.search.title")} desc={t("sec.search.desc")}>
-          <TeamSearchSection />
-        </Sec>
-
         <Sec id="portfolio" eye={t("sec.portfolio.eye")} title={t("sec.portfolio.title")} desc={t("sec.portfolio.desc")}>
           <div className="pf-grid">
             {portfolioItems.map((item, i) => <PortfolioCard key={item.title} item={item} i={i} />)}
@@ -1714,6 +1820,24 @@ export default function App() {
       </main>
 
       <Footer />
+
+      <AnimatePresence>
+        {pageView && (
+          <motion.div
+            key={pageView}
+            className="sub-page-wrap"
+            initial={{ x: "100vw" }}
+            animate={{ x: 0 }}
+            exit={{ x: "100vw" }}
+            transition={{ duration: 0.42, ease: [0.16, 1, 0.3, 1] }}
+          >
+            {pageView === "ftcscout"
+              ? <FTCScoutPage onClose={() => setPageView(null)} />
+              : <TechCupPage  onClose={() => setPageView(null)} />
+            }
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

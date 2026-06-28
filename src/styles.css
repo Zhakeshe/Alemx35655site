@@ -1366,3 +1366,114 @@ img { display: block; max-width: 100%; }
   .opr-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .ts-stats-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
 }
+
+/* ── NAVBAR PAGE BUTTONS ── */
+.nav-page-btn {
+  background:none;border:1px solid rgba(168,85,247,.28);
+  color:rgba(216,180,254,.75);font-family:"Outfit",sans-serif;
+  font-size:.78rem;font-weight:700;letter-spacing:.06em;
+  padding:.28rem .75rem;border-radius:999px;cursor:pointer;
+  transition:background .18s,border-color .18s,color .18s;white-space:nowrap;
+}
+.nav-page-btn:hover { background:rgba(168,85,247,.14);border-color:rgba(168,85,247,.55);color:#d8b4fe; }
+.nav-page-btn--cup { border-color:rgba(251,191,36,.3);color:rgba(253,230,138,.8); }
+.nav-page-btn--cup:hover { background:rgba(251,191,36,.1);border-color:rgba(251,191,36,.55);color:#fde68a; }
+
+/* Mobile nav page buttons */
+.mob-nav__link--page {
+  background:none;border:1px solid rgba(168,85,247,.22);
+  width:100%;text-align:left;cursor:pointer;
+  font-family:"Outfit",sans-serif;font-size:1rem;font-weight:600;
+  color:rgba(216,180,254,.8);
+}
+.mob-nav__link--page:hover { background:rgba(168,85,247,.07); }
+.mob-nav__link--cup { border-color:rgba(251,191,36,.22);color:rgba(253,230,138,.8); }
+
+/* ── SUB-PAGE (FTC Scout / Tech Cup) ── */
+.sub-page-wrap {
+  position:fixed;inset:0;z-index:500;
+  background:#040010;
+  overflow-y:auto;
+  overflow-x:hidden;
+}
+.sub-page {
+  min-height:100vh;
+  display:flex;flex-direction:column;
+}
+.sub-page__topbar {
+  position:sticky;top:0;z-index:10;
+  display:flex;align-items:center;gap:1.2rem;
+  padding:1rem 1.4rem;
+  background:rgba(4,0,16,.88);
+  backdrop-filter:blur(14px);
+  border-bottom:1px solid rgba(168,85,247,.12);
+}
+.sub-page__back {
+  display:inline-flex;align-items:center;gap:.4rem;
+  background:none;border:1px solid rgba(168,85,247,.22);
+  color:rgba(216,180,254,.6);font-size:.82rem;font-weight:600;
+  letter-spacing:.05em;padding:.32rem .85rem;border-radius:999px;
+  cursor:pointer;transition:border-color .18s,color .18s;flex-shrink:0;
+}
+.sub-page__back:hover { border-color:rgba(168,85,247,.5);color:#d8b4fe; }
+.sub-page__title { flex:1; }
+.sub-page__eye {
+  font-size:.68rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:rgba(168,85,247,.6);display:block;margin-bottom:.1rem;
+}
+.sub-page__title h2 {
+  font-family:"Outfit",sans-serif;font-size:1.5rem;font-weight:800;
+  color:#fff;line-height:1;
+}
+.sub-page__body {
+  flex:1;padding:2rem 1.4rem;
+  max-width:900px;width:100%;margin:0 auto;
+}
+
+/* ── TECH CUP TABS ── */
+.tc-tabs {
+  display:flex;gap:.5rem;padding:.75rem 1.4rem;
+  border-bottom:1px solid rgba(168,85,247,.1);
+  background:rgba(4,0,16,.6);
+  overflow-x:auto;
+}
+.tc-tab {
+  background:none;border:1px solid rgba(168,85,247,.15);
+  color:rgba(216,180,254,.5);font-family:"Outfit",sans-serif;
+  font-size:.82rem;font-weight:600;letter-spacing:.04em;
+  padding:.38rem .95rem;border-radius:999px;cursor:pointer;
+  transition:background .18s,border-color .18s,color .18s;white-space:nowrap;
+}
+.tc-tab:hover { border-color:rgba(168,85,247,.35);color:rgba(216,180,254,.8); }
+.tc-tab--on { background:rgba(168,85,247,.14);border-color:rgba(168,85,247,.5);color:#d8b4fe; }
+
+/* ── TECH CUP COMING SOON ── */
+.tc-soon {
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:60vh;text-align:center;gap:1rem;
+  position:relative;
+}
+.tc-soon__pulse {
+  position:absolute;width:240px;height:240px;border-radius:50%;
+  background:radial-gradient(circle,rgba(168,85,247,.12),transparent 70%);
+  animation:pulse-ring 3s ease-in-out infinite;
+}
+@keyframes pulse-ring { 0%,100%{transform:scale(.8);opacity:.6} 50%{transform:scale(1.2);opacity:1} }
+.tc-soon__icon { font-size:3rem;position:relative; }
+.tc-soon__title {
+  font-family:"Outfit",sans-serif;font-size:2rem;font-weight:800;color:#fff;
+  position:relative;
+}
+.tc-soon__desc { color:var(--muted);font-size:.92rem;max-width:340px;position:relative; }
+.tc-soon__badge {
+  font-size:.72rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+  padding:.28rem .85rem;border-radius:999px;
+  background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.28);color:#fbbf24;
+  position:relative;margin-top:.5rem;
+}
+
+@media (max-width:600px){
+  .sub-page__topbar { padding:.8rem 1rem;gap:.75rem; }
+  .sub-page__body { padding:1.4rem 1rem; }
+  .sub-page__title h2 { font-size:1.2rem; }
+}
