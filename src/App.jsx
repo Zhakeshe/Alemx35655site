@@ -202,18 +202,12 @@ function SplashScreen({ onDone }) {
 // ── HERO PARTICLES ────────────────────────────────────────────────────
 const PARTICLES = [
   {x:"7%",  y:"18%", s:3, dur:3.8, delay:0,   dy:-22, dx:10  },
-  {x:"17%", y:"72%", s:2, dur:4.5, delay:0.4, dy:-18, dx:-8  },
   {x:"26%", y:"38%", s:4, dur:3.2, delay:0.8, dy:-28, dx:6   },
-  {x:"43%", y:"14%", s:2, dur:5.1, delay:1.2, dy:-14, dx:-12 },
   {x:"56%", y:"62%", s:3, dur:4.0, delay:0.6, dy:-20, dx:8   },
-  {x:"66%", y:"28%", s:2, dur:3.6, delay:1.5, dy:-16, dx:-6  },
   {x:"73%", y:"80%", s:4, dur:4.8, delay:0.2, dy:-25, dx:10  },
   {x:"83%", y:"44%", s:3, dur:3.4, delay:1.0, dy:-19, dx:-9  },
-  {x:"91%", y:"24%", s:2, dur:5.0, delay:0.7, dy:-12, dx:7   },
   {x:"49%", y:"87%", s:3, dur:4.2, delay:1.8, dy:-22, dx:-4  },
-  {x:"34%", y:"54%", s:2, dur:3.9, delay:2.1, dy:-15, dx:11  },
   {x:"79%", y:"66%", s:4, dur:4.6, delay:0.3, dy:-26, dx:-7  },
-  {x:"12%", y:"50%", s:3, dur:4.3, delay:1.6, dy:-20, dx:5   },
   {x:"60%", y:"90%", s:2, dur:3.7, delay:0.9, dy:-17, dx:-10 },
 ];
 
@@ -235,11 +229,12 @@ function HeroParticles() {
 
 // ── NAV ──────────────────────────────────────────────────────────────
 const navItems = [
-  { key: "nav.team",         href: "#team" },
-  { key: "nav.robot",        href: "#robot" },
-  { key: "nav.auto",         href: "#auto" },
-  { key: "nav.portfolio",    href: "#portfolio" },
-  { key: "nav.season",    href: "#timeline" },
+  { key: "nav.team",      href: "#team" },
+  { key: "nav.robot",     href: "#robot" },
+  { key: "nav.auto",      href: "#auto" },
+  { key: "nav.ranking",   href: "#ranking" },
+  { key: "nav.rivals",    href: "#rivals" },
+  { key: "nav.portfolio", href: "#portfolio" },
 ];
 
 // ── DATA ──────────────────────────────────────────────────────────────
@@ -281,6 +276,85 @@ const robotSpecs = [
   { label: "Auto Path",   value: "Pedro Pathing" },
   { label: "Motors",      value: "REV × 4" },
   { label: "Season",      value: "DECODE 2025" },
+];
+
+// ── RANKING DATA ─────────────────────────────────────────────────────
+const OPR_STATS = [
+  { label: "Best OPR",    value: 62.12, rank: "1708th", pct: 79.54, col: "#a855f7" },
+  { label: "Auto OPR",    value: 12.06, rank: "2965th", pct: 64.48, col: "#7c3aed" },
+  { label: "Teleop OPR",  value: 50.07, rank: "1456th", pct: 82.56, col: "#c084fc" },
+  { label: "Endgame OPR", value:  7.95, rank: "3339th", pct: 60.00, col: "#f472b6" },
+];
+
+const FTC_EVENTS = [
+  {
+    name: "Batys FIRST Qualifier",
+    loc: "Aktau",
+    date: "17–18 Jan 2026",
+    place: "1st",
+    record: [6, 0, 0],
+    npOPR: "+62.12",
+    rp: 3.50,
+    awards: ["Winning Alliance Captain", "Control Award"],
+    col: "#ffc516",
+    best: true,
+  },
+  {
+    name: "Mangystau Regional",
+    loc: "Aktau",
+    date: "6–7 Dec 2025",
+    place: "9th",
+    record: [2, 3, 0],
+    npOPR: "+0.69",
+    rp: 1.20,
+    awards: ["Judges' Choice Award 3rd"],
+    col: "#a855f7",
+    best: false,
+  },
+  {
+    name: "Central Asia Championship",
+    loc: "Astana",
+    date: "10–13 Feb 2026",
+    place: "40th",
+    record: [1, 7, 0],
+    npOPR: "+25.95",
+    rp: 0.38,
+    awards: [],
+    col: "#7c3aed",
+    best: false,
+  },
+  {
+    name: "Bilim Shyny 2026",
+    loc: "Astana",
+    date: "10–11 Apr 2026",
+    place: "28th",
+    record: [1, 4, 0],
+    npOPR: "–8.52",
+    rp: 1.00,
+    awards: ["Connect Award 2nd"],
+    col: "#f472b6",
+    best: false,
+  },
+];
+
+const ALLY_TEAMS = [
+  { num: "24690", name: "AZUMI (^_<)〜☆", note: "Batys Finals", col: "#ffc516" },
+  { num: "32635", name: "mooneye",          note: "Batys Finals", col: "#ffc516" },
+  { num: "34078", name: "JOOX",             note: "Batys Quals",  col: "#a855f7" },
+  { num: "24881", name: "BILievers",        note: "Batys Quals",  col: "#a855f7" },
+  { num: "33929", name: "GAMBIT",           note: "Batys Quals",  col: "#7c3aed" },
+  { num: "25528", name: "Nomadic Dragons",  note: "Bilim Shyny",  col: "#c084fc" },
+];
+
+const RIVAL_TEAMS = [
+  { num: "33470", name: "SAKURA",          note: "Batys Finals", col: "#f472b6" },
+  { num: "29382", name: "Flying Penguins", note: "Batys Finals", col: "#f472b6" },
+  { num: "25202", name: "Spark team",      note: "Mangystau",    col: "#a855f7" },
+  { num: "21062", name: "QUANT",           note: "Mangystau",    col: "#7c3aed" },
+  { num: "25300", name: "URAN 92",         note: "Mangystau",    col: "#c084fc" },
+  { num: "33444", name: "UlyDala",         note: "Mangystau",    col: "#a855f7" },
+  { num: "34155", name: "GPT",             note: "Bilim Shyny",  col: "#f472b6" },
+  { num: "34111", name: "PH0TON",          note: "Bilim Shyny",  col: "#7c3aed" },
 ];
 
 const timeline = [
@@ -1045,6 +1119,111 @@ function PedroVisualizer() {
   );
 }
 
+// ── RANKING SECTION ───────────────────────────────────────────────────
+function RankingSection() {
+  return (
+    <div className="ranking-wrap">
+      <div className="opr-grid">
+        {OPR_STATS.map((s, i) => (
+          <motion.div key={s.label} className="opr-card"
+            initial={{ opacity: 0, y: 28 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.2 }}
+            transition={{ duration: 0.5, delay: i * 0.09 }}
+          >
+            <div className="opr-card__val" style={{ color: s.col }}>{s.value}</div>
+            <div className="opr-card__label">{s.label}</div>
+            <div className="opr-card__meta">{s.rank} · Top {(100 - s.pct).toFixed(0)}%</div>
+            <div className="opr-bar">
+              <div className="opr-bar__fill" style={{ width: `${s.pct}%`, background: s.col }} />
+            </div>
+          </motion.div>
+        ))}
+      </div>
+
+      <div className="events-list">
+        {FTC_EVENTS.map((ev, i) => (
+          <motion.div key={ev.name}
+            className={`ev-card${ev.best ? " ev-card--best" : ""}`}
+            initial={{ opacity: 0, x: -28 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, amount: 0.15 }}
+            transition={{ duration: 0.5, delay: i * 0.09 }}
+          >
+            <div className="ev-place" style={{ color: ev.col, borderColor: `${ev.col}44` }}>
+              {ev.place}
+            </div>
+            <div className="ev-info">
+              <div className="ev-name">{ev.name}</div>
+              <div className="ev-meta">{ev.loc} · {ev.date}</div>
+              {ev.awards.length > 0 && (
+                <div className="ev-awards">
+                  {ev.awards.map(a => (
+                    <span key={a} className="ev-award" style={{ borderColor: `${ev.col}55`, color: ev.col }}>{a}</span>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="ev-stats">
+              <div className="ev-stat">
+                <span>W–L–T</span>
+                <strong>{ev.record[0]}–{ev.record[1]}–{ev.record[2]}</strong>
+              </div>
+              <div className="ev-stat">
+                <span>npOPR</span>
+                <strong>{ev.npOPR}</strong>
+              </div>
+              <div className="ev-stat">
+                <span>RP</span>
+                <strong>{ev.rp.toFixed(2)}</strong>
+              </div>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── RIVALS SECTION ────────────────────────────────────────────────────
+function TeamRow({ team, side, i }) {
+  return (
+    <motion.div
+      className={`tr-row tr-row--${side}`}
+      initial={{ opacity: 0, x: side === "ally" ? -20 : 20 }}
+      whileInView={{ opacity: 1, x: 0 }}
+      viewport={{ once: true, amount: 0.15 }}
+      transition={{ duration: 0.38, delay: i * 0.06 }}
+    >
+      <div className="tr-num" style={{ color: team.col }}>#{team.num}</div>
+      <div className="tr-info">
+        <div className="tr-name">{team.name}</div>
+        <div className="tr-note">{team.note}</div>
+      </div>
+      <div className="tr-badge tr-badge--{side}" style={{ borderColor: `${team.col}44`, color: team.col }}>
+        {side === "ally" ? "Альянс" : "VS"}
+      </div>
+    </motion.div>
+  );
+}
+
+function RivalsSection() {
+  const t = useT();
+  return (
+    <div className="rivals-wrap">
+      <div className="rivals-col">
+        <h3 className="rivals-col__title rivals-col__title--ally">{t("rank.allies")}</h3>
+        {ALLY_TEAMS.map((team, i) => <TeamRow key={team.num} team={team} side="ally" i={i} />)}
+      </div>
+      <div className="rivals-divider" />
+      <div className="rivals-col">
+        <h3 className="rivals-col__title rivals-col__title--rival">{t("rank.rivals")}</h3>
+        {RIVAL_TEAMS.map((team, i) => <TeamRow key={team.num} team={team} side="rival" i={i} />)}
+      </div>
+    </div>
+  );
+}
+
 // ── ANIMATED COUNTER ──────────────────────────────────────────────────
 function CountStat({ num, suffix, label }) {
   const [count, setCount] = useState(0);
@@ -1352,14 +1531,13 @@ function Sec({ id, eye, title, desc, children, cls="" }) {
 export default function App() {
   const t       = useT();
   const scrollY = useMotionValue(0);
-  const [splash, setSplash] = useState(true);
 
   useEffect(() => {
     const lenis = new Lenis({
-      duration: 1.35,
+      duration: 1.2,
       easing: x => Math.min(1, 1.001 - Math.pow(2, -10 * x)),
       smoothWheel: true,
-      wheelMultiplier: 0.9,
+      wheelMultiplier: 0.85,
     });
     lenis.on('scroll', ({ scroll }) => scrollY.set(scroll));
     let rafId;
@@ -1370,9 +1548,6 @@ export default function App() {
 
   return (
     <div className="app-shell">
-      <AnimatePresence>
-        {splash && <SplashScreen key="splash" onDone={() => setSplash(false)} />}
-      </AnimatePresence>
       <ScrollProgress />
       <div className="bg-orb bg-orb--1" />
       <div className="bg-orb bg-orb--2" />
@@ -1389,13 +1564,11 @@ export default function App() {
         </Sec>
 
         <Sec id="team" eye={t("sec.team.eye")} title={t("sec.team.title")} desc={t("sec.team.desc")}>
-          {/* Mentors — featured row */}
           <div className="team-mentors">
             {teamMembers.filter(m => m.role === "Mentor").map((m, i) => (
               <TeamMember key={m.name} m={m} i={i} />
             ))}
           </div>
-          {/* Core team */}
           <div className="team-grid">
             {teamMembers.filter(m => m.role !== "Mentor").map((m, i) => (
               <TeamMember key={m.name} m={m} i={i + 2} />
@@ -1407,16 +1580,17 @@ export default function App() {
           <PedroVisualizer />
         </Sec>
 
+        <Sec id="ranking" eye={t("sec.ranking.eye")} title={t("sec.ranking.title")} desc={t("sec.ranking.desc")}>
+          <RankingSection />
+        </Sec>
+
+        <Sec id="rivals" eye={t("sec.rivals.eye")} title={t("sec.rivals.title")} desc={t("sec.rivals.desc")}>
+          <RivalsSection />
+        </Sec>
+
         <Sec id="portfolio" eye={t("sec.portfolio.eye")} title={t("sec.portfolio.title")} desc={t("sec.portfolio.desc")}>
           <div className="pf-grid">
             {portfolioItems.map((item, i) => <PortfolioCard key={item.title} item={item} i={i} />)}
-          </div>
-        </Sec>
-
-        <Sec id="timeline" eye={t("sec.timeline.eye")} title={t("sec.timeline.title")} desc={t("sec.timeline.desc")}>
-          <div className="tl-wrap">
-            <div className="tl-line" />
-            {timeline.map((item, i) => <TimelineItem key={item.phase} item={item} i={i} />)}
           </div>
         </Sec>
 
