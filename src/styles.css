@@ -1596,3 +1596,60 @@ img { display: block; max-width: 100%; }
   .tm-detail-grid { grid-template-columns:1fr; }
   .tm-partners { display:none; }
 }
+
+/* ── 3D MODEL PLACEHOLDER ── */
+.bp-wrap {
+  position:relative;width:100%;min-height:300px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.9rem;
+  border-radius:18px;
+  background:rgba(168,85,247,.03);
+  border:1px solid rgba(168,85,247,.14);
+  overflow:hidden;margin-bottom:1.6rem;
+}
+.bp-glow {
+  position:absolute;width:320px;height:320px;border-radius:50%;
+  background:radial-gradient(circle,rgba(168,85,247,.12),transparent 70%);
+  pointer-events:none;top:50%;left:50%;translate:-50% -50%;
+  animation:bp-pulse 4s ease-in-out infinite;
+}
+@keyframes bp-pulse { 0%,100%{opacity:.5;transform:scale(.85)} 50%{opacity:1;transform:scale(1.15)} }
+
+/* CSS 3D cube */
+.bp-scene {
+  width:80px;height:80px;
+  perspective:260px;
+}
+.bp-cube {
+  width:80px;height:80px;position:relative;
+  transform-style:preserve-3d;
+  animation:bp-spin 9s linear infinite;
+}
+@keyframes bp-spin {
+  from{transform:rotateX(-22deg) rotateY(0deg)}
+  to  {transform:rotateX(-22deg) rotateY(360deg)}
+}
+.bp-face {
+  position:absolute;width:80px;height:80px;
+  border:1.5px solid rgba(168,85,247,.45);
+  background:rgba(168,85,247,.04);
+}
+.bp-face--front  { transform:translateZ(40px); }
+.bp-face--back   { transform:rotateY(180deg) translateZ(40px); }
+.bp-face--right  { transform:rotateY(90deg) translateZ(40px); }
+.bp-face--left   { transform:rotateY(-90deg) translateZ(40px); }
+.bp-face--top    { transform:rotateX(90deg) translateZ(40px); }
+.bp-face--bottom { transform:rotateX(-90deg) translateZ(40px); }
+
+.bp-eye {
+  font-size:.65rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase;
+  color:rgba(168,85,247,.55);margin:0;
+}
+.bp-title {
+  font-family:"Outfit",sans-serif;font-size:1.55rem;font-weight:800;
+  color:#fff;margin:0;text-align:center;
+}
+.bp-badge {
+  font-size:.68rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+  padding:.26rem .85rem;border-radius:999px;
+  background:rgba(168,85,247,.1);border:1px solid rgba(168,85,247,.3);color:#c084fc;
+}

@@ -795,6 +795,8 @@ function RobotStage() {
   const battPct  = Math.min(100, Math.max(0, ((tele.battery - 10) / 4) * 100));
   const battCol  = battPct > 55 ? '#4ade80' : battPct > 28 ? '#fbbf24' : '#f87171';
 
+  const t = useT();
+
   return (
     <motion.div
       ref={stageRef}
@@ -804,6 +806,25 @@ function RobotStage() {
       viewport={{ once: true, amount: 0.2 }}
       transition={{ duration: 0.6 }}
     >
+
+      {/* ── 3D Model placeholder ── */}
+      <div className="bp-wrap">
+        <div className="bp-glow" aria-hidden="true" />
+        <div className="bp-scene" aria-hidden="true">
+          <div className="bp-cube">
+            <div className="bp-face bp-face--front" />
+            <div className="bp-face bp-face--back" />
+            <div className="bp-face bp-face--right" />
+            <div className="bp-face bp-face--left" />
+            <div className="bp-face bp-face--top" />
+            <div className="bp-face bp-face--bottom" />
+          </div>
+        </div>
+        <p className="bp-eye">3D MODEL · ROBOT</p>
+        <h3 className="bp-title">{t("bp.soon")}</h3>
+        <span className="bp-badge">Coming Soon</span>
+      </div>
+
       <div className="tele-shell">
 
         {/* ── Header ── */}
