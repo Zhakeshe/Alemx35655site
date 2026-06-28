@@ -334,8 +334,19 @@ async function ftcGql(query, variables) {
   return j.data;
 }
 
+const AWARD_LABEL = {
+  DeansListFinalist:"Dean's List Finalist",DeansListSemiFinalist:"Dean's List Semi-Finalist",
+  DeansListWinner:"Dean's List Winner",JudgesChoice:"Judges' Choice",
+  DivisionFinalist:"Division Finalist",DivisionWinner:"Division Winner",
+  ConferenceFinalist:"Conference Finalist",Compass:"Compass Award",Promote:"Promote Award",
+  Control:"Control Award",Motivate:"Motivate Award",Reach:"Reach Award",Sustain:"Sustain Award",
+  Design:"Design Award",Innovate:"Innovate Award",Connect:"Connect Award",Think:"Think Award",
+  TopRanked:"Top Ranked",Inspire:"Inspire Award",Winner:"Winner",Finalist:"Finalist",
+};
+const ord = n => n===1?"1st":n===2?"2nd":n===3?"3rd":`${n}th`;
+
 const Q_SEARCH = `query($q:String!,$l:Int){teamsSearch(searchText:$q,limit:$l){number name location{city state country}rookieYear}}`;
-const Q_TEAM   = `query($n:Int!,$s:Int!){teamByNumber(number:$n){number name schoolName location{city state country}rookieYear quickStats(season:$s){count tot{value rank}auto{value rank}dc{value rank}eg{value rank}}events(season:$s){event{name location{city}start}stats{...on TeamEventStats2019{rank wins losses ties}...on TeamEventStats2022{rank wins losses ties}...on TeamEventStats2023{rank wins losses ties}...on TeamEventStats2024{rank wins losses ties}...on TeamEventStats2025{rank wins losses ties rp}}awards{name}}matches(season:$s){alliance allianceRole match{hasBeenPlayed tournamentLevel matchNum description event{name}teams{teamNumber alliance onField noShow}scores{...on MatchScores2025{red{totalPoints autoPoints dcPoints}blue{totalPoints autoPoints dcPoints}}}}}}}`
+const Q_TEAM   = `query($n:Int!,$s:Int!){teamByNumber(number:$n){number name schoolName location{city state country}rookieYear quickStats(season:$s){count tot{value rank}auto{value rank}dc{value rank}eg{value rank}}events(season:$s){event{name location{city}start}stats{...on TeamEventStats2019{rank wins losses ties}...on TeamEventStats2022{rank wins losses ties}...on TeamEventStats2023{rank wins losses ties}...on TeamEventStats2024{rank wins losses ties}...on TeamEventStats2025{rank wins losses ties rp}}awards{type placement}}matches(season:$s){alliance allianceRole match{hasBeenPlayed tournamentLevel matchNum description event{name}teams{teamNumber alliance onField noShow}scores{...on MatchScores2025{red{totalPoints autoPoints dcPoints}blue{totalPoints autoPoints dcPoints}}}}}}}`
 
 const timeline = [
   { dateKey: "tl.0.date", phaseKey: "tl.0.phase", descKey: "tl.0.desc", col: "#a855f7" },
@@ -1388,7 +1399,9 @@ function TeamDetailCard({ team, onBack, t }) {
                   {ev.awards?.length > 0 && (
                     <div className="ts-ev-awards">
                       {ev.awards.map((a, j) => (
-                        <span key={j} className="ts-ev-award">{a.name}</span>
+                        <span key={j} className="ts-ev-award">
+                          {AWARD_LABEL[a.type] || a.type}{a.placement > 1 ? ` · ${ord(a.placement)}` : ""}
+                        </span>
                       ))}
                     </div>
                   )}
