@@ -235,7 +235,7 @@ const navItems = [
   { key: "nav.robot",     href: "#robot" },
   { key: "nav.auto",      href: "#auto" },
   { key: "nav.ranking",   href: "#ranking" },
-  { key: "nav.rivals",    href: "#rivals" },
+  { key: "nav.search",    href: "#search" },
   { key: "nav.portfolio", href: "#portfolio" },
 ];
 
@@ -252,13 +252,6 @@ const teamMembers = [
   { name: "Zhandos",            role: "Auto Coder",        img: "https://i.ibb.co.com/5WJwH14n/Zhandos.jpg" },
   { name: "Sabina",             role: "SMM",               img: "https://i.ibb.co.com/JR9ZR9Sj/sssabina.jpg" },
   { name: "Tannur",             role: "SMM",               img: "https://i.ibb.co.com/bgmkFzPz/Tannur.jpg" },
-];
-
-const stats = [
-  { num: 10,  suffix: "+", lk: "stats.members" },
-  { num: 200, suffix: "+", lk: "stats.hours" },
-  { num: 3,   suffix: "",  lk: "stats.paths" },
-  { num: 6,   suffix: "",  lk: "stats.months" },
 ];
 
 const achievements = [
@@ -314,18 +307,6 @@ const FTC_EVENTS = [
     best: false,
   },
   {
-    name: "Central Asia Championship",
-    loc: "Astana",
-    date: "10–13 Feb 2026",
-    place: "40th",
-    record: [1, 7, 0],
-    npOPR: "+25.95",
-    rp: 0.38,
-    awards: [],
-    col: "#7c3aed",
-    best: false,
-  },
-  {
     name: "Bilim Shyny 2026",
     loc: "Astana",
     date: "10–11 Apr 2026",
@@ -339,25 +320,23 @@ const FTC_EVENTS = [
   },
 ];
 
-const ALLY_TEAMS = [
-  { num: "24690", name: "AZUMI (^_<)〜☆", note: "Batys Finals", col: "#ffc516" },
-  { num: "32635", name: "mooneye",          note: "Batys Finals", col: "#ffc516" },
-  { num: "34078", name: "JOOX",             note: "Batys Quals",  col: "#a855f7" },
-  { num: "24881", name: "BILievers",        note: "Batys Quals",  col: "#a855f7" },
-  { num: "33929", name: "GAMBIT",           note: "Batys Quals",  col: "#7c3aed" },
-  { num: "25528", name: "Nomadic Dragons",  note: "Bilim Shyny",  col: "#c084fc" },
-];
+// ── FTC SCOUT API ─────────────────────────────────────────────────────
+const FTCSCOUT = "https://api.ftcscout.org/graphql";
+const FTC_SEASON = 2025;
 
-const RIVAL_TEAMS = [
-  { num: "33470", name: "SAKURA",          note: "Batys Finals", col: "#f472b6" },
-  { num: "29382", name: "Flying Penguins", note: "Batys Finals", col: "#f472b6" },
-  { num: "25202", name: "Spark team",      note: "Mangystau",    col: "#a855f7" },
-  { num: "21062", name: "QUANT",           note: "Mangystau",    col: "#7c3aed" },
-  { num: "25300", name: "URAN 92",         note: "Mangystau",    col: "#c084fc" },
-  { num: "33444", name: "UlyDala",         note: "Mangystau",    col: "#a855f7" },
-  { num: "34155", name: "GPT",             note: "Bilim Shyny",  col: "#f472b6" },
-  { num: "34111", name: "PH0TON",          note: "Bilim Shyny",  col: "#7c3aed" },
-];
+async function ftcGql(query, variables) {
+  const r = await fetch(FTCSCOUT, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query, variables }),
+  });
+  const j = await r.json();
+  if (j.errors) throw new Error(j.errors[0].message);
+  return j.data;
+}
+
+const Q_SEARCH = `query($q:String!){teamsSearch(query:$q,limit:8){number name city state country rookieYear}}`;
+const Q_TEAM   = `query($n:Int!,$s:Int!){teamByNumber(number:$n){number name schoolName city state country rookieYear quickStats(season:$s){tot{value rank percentile}auto{value rank percentile}dc{value rank percentile}eg{value rank percentile}}events(season:$s){event{name city start}stats{rank wins losses ties teamsRanked}awards{award{name}}}}}`;
 
 const timeline = [
   { dateKey: "tl.0.date", phaseKey: "tl.0.phase", descKey: "tl.0.desc", col: "#a855f7" },
@@ -1193,74 +1172,201 @@ function RankingSection() {
   );
 }
 
-// ── RIVALS SECTION ────────────────────────────────────────────────────
-function TeamRow({ team, side, i }) {
+// ── FTC SCOUT TEAM SEARCH ─────────────────────────────────────────────
+function TeamDetailCard({ team, onBack, t }) {
+  const qs = team.quickStats;
+  const statItems = qs ? [
+    { label: "Total OPR",   ...qs.tot,  col: "#a855f7" },
+    { label: "Auto OPR",    ...qs.auto, col: "#7c3aed" },
+    { label: "TeleOp OPR",  ...qs.dc,   col: "#c084fc" },
+    { label: "Endgame OPR", ...qs.eg,   col: "#f472b6" },
+  ] : [];
+
   return (
     <motion.div
-      className={`tr-row tr-row--${side}`}
-      initial={{ opacity: 0, x: side === "ally" ? -20 : 20 }}
-      whileInView={{ opacity: 1, x: 0 }}
-      viewport={{ once: true, amount: 0.15 }}
-      transition={{ duration: 0.38, delay: i * 0.06 }}
+      className="ts-detail"
+      initial={{ opacity: 0, y: 18 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
     >
-      <div className="tr-num" style={{ color: team.col }}>#{team.num}</div>
-      <div className="tr-info">
-        <div className="tr-name">{team.name}</div>
-        <div className="tr-note">{team.note}</div>
+      <button className="ts-back" onClick={onBack}>
+        ← {t("search.back")}
+      </button>
+
+      <div className="ts-detail-header">
+        <div className="ts-detail-num">#{team.number}</div>
+        <div className="ts-detail-meta">
+          <h3 className="ts-detail-name">{team.name}</h3>
+          {team.schoolName && <div className="ts-detail-school">{team.schoolName}</div>}
+          <div className="ts-detail-loc">
+            {[team.city, team.state, team.country].filter(Boolean).join(" · ")}
+          </div>
+          <div className="ts-detail-rookie">FTC since {team.rookieYear}</div>
+        </div>
       </div>
-      <div className="tr-badge tr-badge--{side}" style={{ borderColor: `${team.col}44`, color: team.col }}>
-        {side === "ally" ? "Альянс" : "VS"}
-      </div>
+
+      {statItems.length > 0 && (
+        <div className="ts-stats-grid">
+          {statItems.map(s => (
+            <div key={s.label} className="ts-stat-card" style={{ "--col": s.col }}>
+              <div className="ts-stat-label">{s.label}</div>
+              <div className="ts-stat-value" style={{ color: s.col }}>
+                {s.value != null ? s.value.toFixed(2) : "—"}
+              </div>
+              <div className="ts-stat-rank">{s.rank != null ? `#${s.rank}` : "—"}</div>
+              <div className="ts-stat-bar">
+                <div className="ts-stat-fill" style={{ width: `${s.percentile ?? 0}%`, background: s.col }} />
+              </div>
+              <div className="ts-stat-pct">{s.percentile != null ? `${s.percentile.toFixed(1)}%` : ""}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {team.events?.length > 0 && (
+        <div className="ts-events">
+          <h4 className="ts-events-title">Season {FTC_SEASON}–{FTC_SEASON + 1}</h4>
+          {team.events.map((ev, i) => (
+            <div key={i} className="ts-ev-row">
+              <div className="ts-ev-left">
+                <div className="ts-ev-name">{ev.event.name}</div>
+                <div className="ts-ev-loc">
+                  {ev.event.city}
+                  {ev.event.start && ` · ${new Date(ev.event.start).toLocaleDateString("en-GB", { month: "short", year: "numeric" })}`}
+                </div>
+                {ev.awards?.length > 0 && (
+                  <div className="ts-ev-awards">
+                    {ev.awards.map((a, j) => <span key={j} className="ts-ev-award">🏆 {a.award.name}</span>)}
+                  </div>
+                )}
+              </div>
+              {ev.stats && (
+                <div className="ts-ev-right">
+                  <div className="ts-ev-rank">#{ev.stats.rank}<span>/{ev.stats.teamsRanked}</span></div>
+                  <div className="ts-ev-rec">{ev.stats.wins}–{ev.stats.losses}–{ev.stats.ties}</div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </motion.div>
   );
 }
 
-function RivalsSection() {
+function TeamSearchSection() {
   const t = useT();
-  return (
-    <div className="rivals-wrap">
-      <div className="rivals-col">
-        <h3 className="rivals-col__title rivals-col__title--ally">{t("rank.allies")}</h3>
-        {ALLY_TEAMS.map((team, i) => <TeamRow key={team.num} team={team} side="ally" i={i} />)}
-      </div>
-      <div className="rivals-divider" />
-      <div className="rivals-col">
-        <h3 className="rivals-col__title rivals-col__title--rival">{t("rank.rivals")}</h3>
-        {RIVAL_TEAMS.map((team, i) => <TeamRow key={team.num} team={team} side="rival" i={i} />)}
-      </div>
-    </div>
-  );
-}
+  const [query, setQuery]     = useState("");
+  const [results, setResults] = useState([]);
+  const [selected, setSelected] = useState(null);
+  const [detail, setDetail]   = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [detLoading, setDetLoading] = useState(false);
+  const [error, setError]     = useState(null);
+  const debRef = useRef(null);
 
-// ── ANIMATED COUNTER ──────────────────────────────────────────────────
-function CountStat({ num, suffix, label }) {
-  const [count, setCount] = useState(0);
-  const hasRun = useRef(false);
-  const elRef  = useRef(null);
-
-  useEffect(() => {
-    const el = elRef.current;
-    if (!el) return;
-    const obs = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting && !hasRun.current) {
-        hasRun.current = true;
-        let cur = 0;
-        const step = Math.max(1, Math.ceil(num / 60));
-        const timer = setInterval(() => {
-          cur = Math.min(cur + step, num);
-          setCount(cur);
-          if (cur >= num) clearInterval(timer);
-        }, 24);
+  const doSearch = useCallback(async (q) => {
+    const raw = q.trim();
+    if (!raw) { setResults([]); setLoading(false); return; }
+    setLoading(true);
+    setError(null);
+    try {
+      if (/^\d+$/.test(raw)) {
+        const d = await ftcGql(Q_TEAM, { n: parseInt(raw, 10), s: FTC_SEASON });
+        setResults(d.teamByNumber ? [d.teamByNumber] : []);
+      } else {
+        const d = await ftcGql(Q_SEARCH, { q: raw });
+        setResults(d.teamsSearch || []);
       }
-    }, { threshold: 0.5 });
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, [num]);
+    } catch (e) { setError(e.message); }
+    finally { setLoading(false); }
+  }, []);
+
+  const onInput = e => {
+    const v = e.target.value;
+    setQuery(v);
+    if (selected) { setSelected(null); setDetail(null); }
+    clearTimeout(debRef.current);
+    debRef.current = setTimeout(() => doSearch(v), 380);
+  };
+
+  const openTeam = async (num) => {
+    setSelected(num);
+    setDetLoading(true);
+    setDetail(null);
+    try {
+      const d = await ftcGql(Q_TEAM, { n: num, s: FTC_SEASON });
+      setDetail(d.teamByNumber);
+    } catch (e) { setError(e.message); }
+    finally { setDetLoading(false); }
+  };
 
   return (
-    <div className="stat-item" ref={elRef}>
-      <div className="stat-num">{count}{suffix}</div>
-      <div className="stat-label">{label}</div>
+    <div className="ts-wrap">
+      <div className="ts-search-bar">
+        <svg className="ts-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input
+          className="ts-input"
+          type="text"
+          placeholder={t("search.placeholder")}
+          value={query}
+          onChange={onInput}
+          autoComplete="off"
+          spellCheck={false}
+        />
+        {loading && <span className="ts-spinner" />}
+      </div>
+
+      {error && <div className="ts-error">{error}</div>}
+
+      <AnimatePresence mode="wait">
+        {selected ? (
+          detLoading ? (
+            <motion.div key="loading" className="ts-det-loading" initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}>
+              <span className="ts-spinner ts-spinner--lg" />
+            </motion.div>
+          ) : detail ? (
+            <TeamDetailCard key={detail.number} team={detail} onBack={() => { setSelected(null); setDetail(null); }} t={t} />
+          ) : null
+        ) : results.length > 0 ? (
+          <motion.div key="results" className="ts-results" initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }} transition={{ duration:0.28 }}>
+            {results.map((team, i) => (
+              <motion.button
+                key={team.number}
+                className="ts-card"
+                initial={{ opacity:0, y:8 }}
+                animate={{ opacity:1, y:0 }}
+                transition={{ delay: i * 0.04, duration: 0.26 }}
+                onClick={() => openTeam(team.number)}
+              >
+                <div className="ts-card-num">#{team.number}</div>
+                <div className="ts-card-body">
+                  <div className="ts-card-name">{team.name}</div>
+                  <div className="ts-card-loc">
+                    {[team.city, team.state, team.country].filter(Boolean).join(", ")}
+                  </div>
+                </div>
+                <div className="ts-card-meta">
+                  <span className="ts-card-year">Since {team.rookieYear}</span>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><path d="M9 18l6-6-6-6"/></svg>
+                </div>
+              </motion.button>
+            ))}
+          </motion.div>
+        ) : query.trim() && !loading ? (
+          <motion.div key="empty" className="ts-empty" initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}>
+            {t("search.empty")}
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+
+      {!query && (
+        <div className="ts-hint">
+          <span>{t("search.hint")}</span>
+        </div>
+      )}
     </div>
   );
 }
@@ -1592,8 +1698,8 @@ export default function App() {
           <RankingSection />
         </Sec>
 
-        <Sec id="rivals" eye={t("sec.rivals.eye")} title={t("sec.rivals.title")} desc={t("sec.rivals.desc")}>
-          <RivalsSection />
+        <Sec id="search" eye={t("sec.search.eye")} title={t("sec.search.title")} desc={t("sec.search.desc")}>
+          <TeamSearchSection />
         </Sec>
 
         <Sec id="portfolio" eye={t("sec.portfolio.eye")} title={t("sec.portfolio.title")} desc={t("sec.portfolio.desc")}>
@@ -1603,9 +1709,6 @@ export default function App() {
         </Sec>
 
         <Sec id="extras" eye={t("sec.extras.eye")} title={t("sec.extras.title")} desc={t("sec.extras.desc")}>
-          <div className="stats-bar">
-            {stats.map(s => <CountStat key={s.lk} num={s.num} suffix={s.suffix} label={t(s.lk)} />)}
-          </div>
           <AchievementsCarousel />
         </Sec>
       </main>
