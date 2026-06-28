@@ -1653,3 +1653,42 @@ img { display: block; max-width: 100%; }
   padding:.26rem .85rem;border-radius:999px;
   background:rgba(168,85,247,.1);border:1px solid rgba(168,85,247,.3);color:#c084fc;
 }
+
+/* ── TECH CUP SEARCH ── */
+.tc-search-wrap { display:flex;flex-direction:column;gap:1.6rem; }
+.tc-search-bar {
+  display:flex;align-items:center;gap:.75rem;
+  background:rgba(255,255,255,.04);border:1px solid rgba(168,85,247,.18);
+  border-radius:12px;padding:.8rem 1.1rem;
+}
+.tc-search-icon { color:rgba(168,85,247,.5);flex-shrink:0; }
+.tc-search-input {
+  flex:1;background:none;border:none;outline:none;
+  color:#f0e6ff;font-family:"Outfit",sans-serif;font-size:.95rem;cursor:default;
+}
+.tc-search-input::placeholder { color:rgba(168,85,247,.3); }
+
+/* ── TECH CUP EMBED ── */
+.tc-embed { display:flex;flex-direction:column;gap:.75rem; }
+.tc-embed__frame-wrap {
+  position:relative;width:100%;padding-bottom:56.25%;
+  border-radius:14px;overflow:hidden;
+  background:#000;border:1px solid rgba(168,85,247,.14);
+}
+.tc-embed__frame { position:absolute;inset:0;width:100%;height:100%;border:none; }
+
+.tc-embed-soon {
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:240px;gap:.65rem;
+  border:1px dashed rgba(168,85,247,.18);border-radius:14px;
+  background:rgba(168,85,247,.03);
+}
+.tc-embed-soon__label {
+  font-size:.68rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;
+  color:rgba(168,85,247,.5);
+}
+.tc-embed-soon__msg { font-size:.88rem;color:var(--muted); }
+
+/* hide scrollbar on tab row */
+.tc-tabs { scrollbar-width:none; }
+.tc-tabs::-webkit-scrollbar { display:none; }

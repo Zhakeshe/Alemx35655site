@@ -1737,7 +1737,61 @@ const TC_TABS = [
   { key: "teams" },
   { key: "judging" },
   { key: "schedule" },
+  { key: "search" },
+  { key: "live" },
+  { key: "fll" },
 ];
+
+// YouTube stream URLs — replace with actual links when ready
+const TC_LIVE_URL = "";
+const TC_FLL_URL  = "";
+
+function tcEmbedUrl(raw) {
+  const m = raw.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|live\/))([^?&\s]+)/);
+  const id = m?.[1] ?? raw;
+  return `https://www.youtube.com/embed/${id}?autoplay=1&mute=1&rel=0&modestbranding=1`;
+}
+
+function TechCupEmbed({ title, url, t }) {
+  if (!url) return (
+    <div className="tc-embed-soon">
+      <span className="tc-embed-soon__label">{title}</span>
+      <p className="tc-embed-soon__msg">{t("tc.stream.soon")}</p>
+    </div>
+  );
+  return (
+    <div className="tc-embed">
+      <div className="tc-embed__frame-wrap">
+        <iframe
+          className="tc-embed__frame"
+          src={tcEmbedUrl(url)}
+          title={title}
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+        />
+      </div>
+    </div>
+  );
+}
+
+function TechCupSearch({ t }) {
+  return (
+    <div className="tc-search-wrap">
+      <div className="tc-search-bar">
+        <svg className="tc-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input
+          className="tc-search-input"
+          type="text"
+          placeholder={t("tc.search.placeholder")}
+          readOnly
+        />
+      </div>
+      <TechCupComingSoon label={t("tc.tab.search")} t={t} />
+    </div>
+  );
+}
 
 function TechCupPage({ onClose }) {
   const t = useT();
@@ -1779,7 +1833,14 @@ function TechCupPage({ onClose }) {
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.26 }}
           >
-            <TechCupComingSoon label={t(`tc.tab.${tab}`)} t={t} />
+            {tab === "search"
+              ? <TechCupSearch t={t} />
+              : tab === "live"
+              ? <TechCupEmbed title="Live FTC" url={TC_LIVE_URL} t={t} />
+              : tab === "fll"
+              ? <TechCupEmbed title="FLL" url={TC_FLL_URL} t={t} />
+              : <TechCupComingSoon label={t(`tc.tab.${tab}`)} t={t} />
+            }
           </motion.div>
         </AnimatePresence>
       </div>
@@ -1791,7 +1852,6 @@ function TechCupComingSoon({ label, t }) {
   return (
     <div className="tc-soon">
       <div className="tc-soon__pulse" />
-      <div className="tc-soon__icon">⚡</div>
       <h3 className="tc-soon__title">{t("tc.soon")}</h3>
       <p className="tc-soon__desc">{t("tc.soon.desc")}</p>
       <div className="tc-soon__badge">{label}</div>
