@@ -219,7 +219,7 @@ function HeroParticles() {
           key={i}
           className="hero-particle"
           style={{ left:p.x, top:p.y, width:p.s, height:p.s }}
-          animate={{ y:[0,p.dy,0], x:[0,p.dx,0], opacity:[0.15,0.65,0.15], scale:[1,1.5,1] }}
+          animate={{ y:[0,p.dy,0], x:[0,p.dx,0], opacity:[0.1,0.5,0.1] }}
           transition={{ duration:p.dur, delay:p.delay, repeat:Infinity, ease:"easeInOut" }}
         />
       ))}
@@ -676,9 +676,9 @@ function Hero({ scrollY }) {
       <motion.div
         className="hero-center"
         style={{ scale, opacity }}
-        initial={{ opacity: 0, filter: "blur(18px)" }}
-        animate={{ opacity: 1, filter: "blur(0px)" }}
-        transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
       >
         {/* Left: text — moves faster on scroll */}
         <motion.div className="hero-text" style={{ y: textY }}>
@@ -910,10 +910,10 @@ function TeamMember({ m, i }) {
     <motion.div
       className="member"
       style={{ rotateX: rotX, rotateY: rotY, transformPerspective: 700 }}
-      initial={{ opacity: 0, y: 55, scale: 0.78 }}
-      whileInView={{ opacity: 1, y: 0, scale: 1 }}
+      initial={{ opacity: 0, y: 36 }}
+      whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.05 }}
-      transition={{ duration: 0.72, delay: i * 0.055, ease: [0.34, 1.56, 0.64, 1] }}
+      transition={{ duration: 0.55, delay: i * 0.04, ease: [0.16, 1, 0.3, 1] }}
       onMouseMove={onMove}
       onMouseLeave={onLeave}
     >
@@ -1508,10 +1508,10 @@ function Sec({ id, eye, title, desc, children, cls="" }) {
           transition={{duration:0.48, ease:[0.34,1.56,0.64,1]}}
         >{eye}</motion.span>
         <motion.h2
-          initial={{opacity:0, y:32, filter:"blur(10px)"}}
-          whileInView={{opacity:1, y:0, filter:"blur(0px)"}}
+          initial={{opacity:0, y:24}}
+          whileInView={{opacity:1, y:0}}
           viewport={{once:true, amount:0.3}}
-          transition={{duration:0.65, delay:0.08, ease:[0.16,1,0.3,1]}}
+          transition={{duration:0.55, delay:0.06, ease:[0.16,1,0.3,1]}}
         >{title}</motion.h2>
         {desc && (
           <motion.p
