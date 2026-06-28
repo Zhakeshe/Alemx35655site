@@ -239,12 +239,23 @@ const navItems = [
 ];
 
 // ── DATA ──────────────────────────────────────────────────────────────
+const ROLE_KEY = {
+  "Mentor":             "role.mentor",
+  "Captain · Engineer": "role.captain",
+  "Engineer":           "role.engineer",
+  "Main Coder":         "role.main_coder",
+  "Junior Coder":       "role.junior_coder",
+  "Designer":           "role.designer",
+  "Auto Coder":         "role.auto_coder",
+  "SMM":                "role.smm",
+};
+
 const teamMembers = [
   { name: "Buxarbaev Zhaxan",   role: "Mentor",            img: "https://i.ibb.co.com/r2rX1ryJ/Zhaxan.jpg" },
   { name: "Zholbatyrov Elaman", role: "Mentor",            img: "https://i.ibb.co.com/8g6Dz5yS/Elaman.jpg" },
   { name: "Alisher",            role: "Captain · Engineer",img: "https://i.ibb.co.com/hJY7nLB3/Alisher.jpg" },
   { name: "Nurdaulet",          role: "Engineer",          img: "https://i.ibb.co.com/rLTctj6/nurda.jpg" },
-  { name: "Zhaqsylyq",          role: "Main Coder",        img: "https://i.ibb.co.com/3m4s1rSg/Zhorikk.jpg" },
+  { name: "Zhaqsylyq",          role: "Main Coder",        img: "https://i.yapx.ru/d5NGC.jpg" },
   { name: "Merey",              role: "Main Coder",        img: "https://i.ibb.co.com/nMSXzT58/Merey.jpg" },
   { name: "Zhienbek",           role: "Junior Coder",      img: "https://i.ibb.co.com/Kj4YVMYk/zhora.jpg" },
   { name: "Tamerlan",           role: "Designer",          img: "https://i.ibb.co.com/6JpzNW7D/Tamer.jpg" },
@@ -256,8 +267,8 @@ const teamMembers = [
 const achievements = [
   { img: "https://i.ibb.co.com/FL6VpSFD/news.jpg",  titleKey: "ach.0.title", subKey: "ach.0.sub", tagKey: "ach.0.tag" },
   { img: "https://i.ibb.co.com/dwTTmRY3/Batys.jpg", titleKey: "ach.1.title", subKey: "ach.1.sub", tagKey: "ach.1.tag" },
-  { img: "https://i.ibb.co.com/Hpr2LPrM/ftc.jpg",   titleKey: "ach.2.title", subKey: "ach.2.sub", tagKey: "ach.2.tag" },
-  { img: "https://picsum.photos/seed/dip4/900/560",  titleKey: "ach.3.title", subKey: "ach.3.sub", tagKey: "ach.3.tag" },
+  { img: "https://i.yapx.ru/d5NGV.png",             titleKey: "ach.2.title", subKey: "ach.2.sub", tagKey: "ach.2.tag" },
+  { img: "https://i.yapx.ru/d5NGV.png",             titleKey: "ach.3.title", subKey: "ach.3.sub", tagKey: "ach.3.tag" },
 ];
 
 const portfolioItems = [
@@ -897,6 +908,7 @@ function RobotStage() {
 
 // ── TEAM ──────────────────────────────────────────────────────────────
 function TeamMember({ m, i }) {
+  const t = useT();
   const onMove = e => {
     const el = e.currentTarget;
     const r  = el.getBoundingClientRect();
@@ -932,7 +944,7 @@ function TeamMember({ m, i }) {
       <div className="member__overlay" />
       <div className="member__info">
         <p className="member__name">{m.name}</p>
-        <span className="member__role">{m.role}</span>
+        <span className="member__role">{t(ROLE_KEY[m.role] ?? m.role)}</span>
       </div>
     </motion.div>
   );
