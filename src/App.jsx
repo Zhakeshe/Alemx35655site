@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence, useMotionValue, useTransform, useSpring, useScroll } from "framer-motion";
-import { ExternalLink, ChevronDown, Pause, Play, RotateCcw } from "lucide-react";
+import { ExternalLink, ChevronDown, Pause, Play, RotateCcw, Eye, X } from "lucide-react";
 import Lenis from "lenis";
 import { useT, useLang } from "./i18n.jsx";
 
@@ -22,42 +22,178 @@ function ScrollProgress() {
   );
 }
 
+// ── GLITCH TEXT ──────────────────────────────────────────────────────
+const GLITCH_CHARS = "0123456789ABCDEF#@!%";
+const SPLASH_LETTERS = ["A", "L", "E", "M", "X"];
+
+function GlitchText({ text, delay = 0 }) {
+  const chars = useMemo(() => text.split(""), [text]);
+  const [disp, setDisp] = useState(() =>
+    chars.map(c => c === " " ? " " : GLITCH_CHARS[Math.floor(Math.random() * GLITCH_CHARS.length)])
+  );
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      let step = 0;
+      const iv = setInterval(() => {
+        step++;
+        const settled = Math.floor(step / 2.5);
+        setDisp(chars.map((c, i) => {
+          if (c === " " || i < settled) return c;
+          return GLITCH_CHARS[Math.floor(Math.random() * GLITCH_CHARS.length)];
+        }));
+        if (settled >= chars.length) { clearInterval(iv); setDisp(chars); }
+      }, 42);
+      return () => clearInterval(iv);
+    }, delay * 1000);
+    return () => clearTimeout(t);
+  }, [chars, delay]);
+
+  return <>{disp.join("")}</>;
+}
+
 // ── SPLASH SCREEN ────────────────────────────────────────────────────
 function SplashScreen({ onDone }) {
+  const [pct, setPct] = useState(0);
+  const [flashing, setFlashing] = useState(false);
+  const doneRef = useRef(false);
+
+  useEffect(() => {
+    const TOTAL = 3000;
+    const start = performance.now();
+    let raf;
+    const tick = now => {
+      const p = Math.min(100, Math.round(((now - start) / TOTAL) * 100));
+      setPct(p);
+      if (p < 100) {
+        raf = requestAnimationFrame(tick);
+      } else if (!doneRef.current) {
+        doneRef.current = true;
+        setFlashing(true);
+        setTimeout(onDone, 800);
+      }
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [onDone]);
+
   return (
     <motion.div
       className="splash"
-      exit={{ opacity: 0, scale: 0.96, filter: "blur(12px)" }}
-      transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+      exit={{ opacity: 0, scale: 1.04 }}
+      transition={{ duration: 0.6, ease: [0.4, 0, 1, 1] }}
     >
-      <motion.div
-        className="splash-logo"
-        initial={{ opacity: 0, y: 28, scale: 0.8 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.75, ease: [0.34, 1.56, 0.64, 1] }}
-      >
-        <span className="splash-name">AlemX</span>
-        <span className="splash-num">#33655</span>
-      </motion.div>
-      <motion.p
-        className="splash-tag"
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.42, duration: 0.5 }}
-      >FTC Robotics Team · Mangistau</motion.p>
-      <motion.div
-        className="splash-track"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.55 }}
-      >
-        <motion.div
-          className="splash-bar"
-          initial={{ scaleX: 0 }}
-          animate={{ scaleX: 1 }}
-          transition={{ delay: 0.65, duration: 1.1, ease: "easeInOut" }}
-          onAnimationComplete={onDone}
+      {/* Exit flash */}
+      <AnimatePresence>
+        {flashing && (
+          <motion.div
+            className="splash-flash"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: [0, 1, 0] }}
+            transition={{ duration: 0.8, times: [0, 0.18, 1] }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Sweeping scanline */}
+      <div className="splash-scanline" aria-hidden="true" />
+
+      {/* Ambient rings */}
+      {[1.8, 2.7, 3.8].map((s, i) => (
+        <motion.div key={i} className="splash-pulse-ring" style={{ scale: s }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: [0, 0.12, 0] }}
+          transition={{ delay: 0.5 + i * 0.32, duration: 3.4, repeat: Infinity }}
         />
+      ))}
+
+      {/* ── HUD frame ── */}
+      <motion.div
+        className="splash-hud"
+        initial={{ opacity: 0, scale: 0.92 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+      >
+        {/* Corner brackets */}
+        {[
+          { cls: "tl", ix: -18, iy: -18 },
+          { cls: "tr", ix:  18, iy: -18 },
+          { cls: "bl", ix: -18, iy:  18 },
+          { cls: "br", ix:  18, iy:  18 },
+        ].map(({ cls, ix, iy }, i) => (
+          <motion.div key={cls}
+            className={`splash-corner splash-corner--${cls}`}
+            initial={{ x: ix, y: iy, opacity: 0 }}
+            animate={{ x: 0, y: 0, opacity: 1 }}
+            transition={{ delay: 0.1 + i * 0.07, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+          />
+        ))}
+
+        {/* Status row */}
+        <motion.div className="splash-hud-status"
+          initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.28, duration: 0.45 }}
+        >
+          <span className="splash-dot" />
+          <span className="splash-status-txt">SYSTEM ONLINE</span>
+          <span className="splash-hud-badge">FTC · 2025</span>
+        </motion.div>
+
+        <motion.div className="splash-divider"
+          initial={{ scaleX: 0 }} animate={{ scaleX: 1 }}
+          transition={{ delay: 0.36, duration: 0.5 }}
+          style={{ transformOrigin: "left" }}
+        />
+
+        {/* ALEMX title */}
+        <div className="splash-name-block">
+          <div className="splash-name">
+            {SPLASH_LETTERS.map((ch, i) => (
+              <motion.span key={i}
+                initial={{ opacity: 0, y: 56, filter: "blur(20px)", scale: 0.55 }}
+                animate={{ opacity: 1, y: 0, filter: "blur(0px)", scale: 1 }}
+                transition={{ delay: 0.44 + i * 0.1, duration: 0.75, ease: [0.34, 1.56, 0.64, 1] }}
+              >{ch}</motion.span>
+            ))}
+          </div>
+
+          <motion.div className="splash-num"
+            initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.02, duration: 0.6 }}
+          >
+            <GlitchText text="#33655" delay={0.95} />
+          </motion.div>
+        </div>
+
+        <motion.p className="splash-tag"
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+          transition={{ delay: 1.5, duration: 0.55 }}
+        >
+          FTC ROBOTICS · DECODE 2025 · MANGISTAU
+        </motion.p>
+
+        <motion.div className="splash-divider"
+          initial={{ scaleX: 0 }} animate={{ scaleX: 1 }}
+          transition={{ delay: 0.7, duration: 0.6 }}
+          style={{ marginTop: "1.5rem", transformOrigin: "left" }}
+        />
+
+        {/* Loading bar */}
+        <motion.div className="splash-loader"
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+          transition={{ delay: 0.65, duration: 0.5 }}
+        >
+          <div className="splash-bar-track">
+            <div className="splash-bar-fill" style={{ width: `${pct}%` }} />
+            {pct > 0 && pct < 100 && (
+              <div className="splash-bar-tip" style={{ left: `${pct}%` }} />
+            )}
+          </div>
+          <div className="splash-bar-row">
+            <span className="splash-bar-label">LOADING</span>
+            <span className="splash-bar-pct">{pct}%</span>
+          </div>
+        </motion.div>
       </motion.div>
     </motion.div>
   );
@@ -136,8 +272,8 @@ const achievements = [
 ];
 
 const portfolioItems = [
-  { title: "Портфолио",            sub: "AlemX #33655 · Основное",   href: "https://canva.link/y61tz7v37q6bnkt",  grad: "135deg, #7c3aed 0%, #a855f7 40%, #c084fc 100%" },
-  { title: "Engineering Portfolio", sub: "AlemX #33655 · Инженерное", href: "https://canva.link/ouqtylruru8b0cr", grad: "135deg, #1e1b4b 0%, #4c1d95 40%, #7c3aed 100%" },
+  { title: "Портфолио",            sub: "AlemX #33655 · Основное",   href: "https://canva.link/y61tz7v37q6bnkt",  embedSrc: "https://canva.link/y61tz7v37q6bnkt",  grad: "135deg, #7c3aed 0%, #a855f7 40%, #c084fc 100%" },
+  { title: "Engineering Portfolio", sub: "AlemX #33655 · Инженерное", href: "https://canva.link/ouqtylruru8b0cr", embedSrc: "https://canva.link/ouqtylruru8b0cr", grad: "135deg, #1e1b4b 0%, #4c1d95 40%, #7c3aed 100%" },
 ];
 
 const robotSpecs = [
@@ -340,6 +476,93 @@ function Navbar({ scrollY }) {
   );
 }
 
+// ── MOBILE NAV ────────────────────────────────────────────────────────
+function MobileNav() {
+  const t = useT();
+  const [open, setOpen] = useState(false);
+
+  const close = () => setOpen(false);
+
+  // Lock body scroll when menu is open
+  useEffect(() => {
+    document.body.style.overflow = open ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [open]);
+
+  return (
+    <>
+      <button
+        className={`mob-burger${open ? " mob-burger--open" : ""}`}
+        onClick={() => setOpen(v => !v)}
+        aria-label={open ? "Закрыть меню" : "Открыть меню"}
+        aria-expanded={open}
+      >
+        <span /><span /><span />
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            className="mob-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.22 }}
+            onClick={close}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            className="mob-drawer"
+            initial={{ y: "-100%", opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: "-100%", opacity: 0 }}
+            transition={{ duration: 0.36, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <div className="mob-drawer__brand">
+              <a className="brand-mark" href="#top" onClick={close}>AlemX <span>#33655</span></a>
+            </div>
+
+            <nav className="mob-nav">
+              {navItems.map((n, i) => (
+                <motion.a
+                  key={n.href}
+                  href={n.href}
+                  className="mob-nav__link"
+                  onClick={close}
+                  initial={{ opacity: 0, x: -18 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.08 + i * 0.055, duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                >
+                  {t(n.key)}
+                </motion.a>
+              ))}
+            </nav>
+
+            <div className="mob-drawer__footer">
+              <LangSwitcher />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  );
+}
+
+// ── HERO AURORA ───────────────────────────────────────────────────────
+function HeroAurora() {
+  return (
+    <div className="hero-aurora" aria-hidden="true">
+      <div className="aurora-blob aurora-blob--1" />
+      <div className="aurora-blob aurora-blob--2" />
+      <div className="aurora-blob aurora-blob--3" />
+    </div>
+  );
+}
+
 // ── HERO ──────────────────────────────────────────────────────────────
 function Hero({ scrollY }) {
   const t = useT();
@@ -351,6 +574,7 @@ function Hero({ scrollY }) {
   return (
     <section className="hero-section" id="top">
       <div className="hero-bg" aria-hidden="true" />
+      <HeroAurora />
       <HeroParticles />
 
       {/* 2 floating logos */}
@@ -384,15 +608,6 @@ function Hero({ scrollY }) {
       >
         {/* Left: text — moves faster on scroll */}
         <motion.div className="hero-text" style={{ y: textY }}>
-          <motion.p
-            className="hero-tag"
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.6 }}
-          >
-            {t("hero.tag")}
-          </motion.p>
-
           <motion.h1
             className="hero-title"
             initial={{ opacity: 0, y: 24 }}
@@ -444,9 +659,45 @@ function Hero({ scrollY }) {
   );
 }
 
-// ── ROBOT BLUEPRINT ───────────────────────────────────────────────────
+// ── LIVE ROBOT TELEMETRY ──────────────────────────────────────────────
+const MOTOR_NAMES   = ["FL", "FR", "BL", "BR"];
+const MOTOR_TARGETS = [1248, 1195, 1162, 1210];
+const AUTO_STATES   = ["COLLECT", "RETURN", "SHOOT", "PARK"];
+
 function RobotStage() {
-  const t = useT();
+  const [tele, setTele] = useState({
+    battery: 13.1,
+    motors:  MOTOR_TARGETS.slice(),
+    encoders:[0, 0, 0, 0],
+    imu:     0,
+    stateIdx:0,
+    ping:    12,
+    loop:    20,
+    active:  true,
+  });
+  const [paused, setPaused] = useState(false);
+
+  useEffect(() => {
+    if (paused) return;
+    const iv = setInterval(() => {
+      setTele(prev => ({
+        battery:  +(12.85 + Math.random() * 0.55).toFixed(2),
+        motors:   MOTOR_TARGETS.map(t => Math.round(t + (Math.random() - 0.5) * 95)),
+        encoders: prev.encoders.map(e => e + Math.round(28 + Math.random() * 48)),
+        imu:      +((prev.imu + (Math.random() - 0.5) * 2.2) % 360).toFixed(1),
+        stateIdx: Math.floor(Date.now() / 2800) % AUTO_STATES.length,
+        ping:     Math.round(9 + Math.random() * 13),
+        loop:     Math.round(17 + Math.random() * 9),
+        active:   true,
+      }));
+    }, 240);
+    return () => clearInterval(iv);
+  }, [paused]);
+
+  const state    = AUTO_STATES[tele.stateIdx];
+  const battPct  = Math.min(100, Math.max(0, ((tele.battery - 10) / 4) * 100));
+  const battCol  = battPct > 55 ? '#4ade80' : battPct > 28 ? '#fbbf24' : '#f87171';
+
   return (
     <motion.div
       className="robot-stage"
@@ -455,16 +706,102 @@ function RobotStage() {
       viewport={{ once: true, amount: 0.2 }}
       transition={{ duration: 0.6 }}
     >
-      <div className="bp">
-        <div className="bp__grid" />
-        <div className="bp__line bp__line--h" /><div className="bp__line bp__line--v" />
-        <div className="bp__c bp__c--1" /><div className="bp__c bp__c--2" /><div className="bp__c bp__c--3" />
-        <div className="bp__corners"><span/><span/><span/><span/></div>
-        <div className="bp__lbl bp__lbl--top">AlemX #33655</div>
-        <div className="bp__lbl bp__lbl--rt">FTC Robot</div>
-        <div className="bp__box">
-          <strong>3D</strong>
-          <small>{t("bp.soon")}</small>
+      <div className="tele-shell">
+
+        {/* ── Header ── */}
+        <div className="tele-header">
+          <div className="tele-hd-left">
+            <span className="tele-logo">AlemX</span>
+            <span className="tele-team">#33655</span>
+          </div>
+          <div className="tele-hd-center">
+            <span className={`tele-state tele-state--${state.toLowerCase()}`}>{state}</span>
+          </div>
+          <div className="tele-hd-right">
+            <span className="tele-chip">PING <b>{tele.ping}ms</b></span>
+            <span className="tele-chip">LOOP <b>{tele.loop}ms</b></span>
+          </div>
+        </div>
+
+        {/* ── Body ── */}
+        <div className="tele-body">
+
+          {/* Left panel: battery + IMU */}
+          <div className="tele-panel">
+            <p className="tele-label">BATTERY</p>
+            <div className="tele-batt-row">
+              <div className="tele-batt-bar">
+                <div className="tele-batt-fill" style={{ width:`${battPct}%`, background:battCol }} />
+              </div>
+              <span className="tele-batt-v" style={{ color:battCol }}>{tele.battery}V</span>
+            </div>
+
+            <p className="tele-label" style={{ marginTop:'1.4rem' }}>IMU / HEADING</p>
+            <div className="tele-imu-wrap">
+              <div className="tele-compass">
+                <div className="tele-compass-needle" style={{ transform:`rotate(${tele.imu}deg)` }} />
+                <span className="tele-compass-deg">{tele.imu < 0 ? (tele.imu + 360).toFixed(1) : tele.imu}°</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Center panel: motor RPM */}
+          <div className="tele-panel">
+            <p className="tele-label">MECANUM — RPM</p>
+            {MOTOR_NAMES.map((name, i) => {
+              const rpm = tele.motors[i];
+              const pct = Math.min(100, (rpm / 1600) * 100);
+              return (
+                <div key={name} className="tele-motor-row">
+                  <span className="tele-motor-name">{name}</span>
+                  <div className="tele-motor-bar">
+                    <div className="tele-motor-fill" style={{ width:`${pct}%` }} />
+                  </div>
+                  <span className="tele-motor-val">{rpm}</span>
+                </div>
+              );
+            })}
+
+            <p className="tele-label" style={{ marginTop:'1.3rem' }}>ROBOT SPECS</p>
+            {robotSpecs.map(s => (
+              <div key={s.label} className="tele-spec-row">
+                <span className="tele-spec-lbl">{s.label}</span>
+                <span className="tele-spec-val">{s.value}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Right panel: encoder ticks */}
+          <div className="tele-panel">
+            <p className="tele-label">ENCODER TICKS</p>
+            {MOTOR_NAMES.map((name, i) => (
+              <div key={name} className="tele-enc-row">
+                <span className="tele-enc-name">{name}</span>
+                <span className="tele-enc-val">{tele.encoders[i].toLocaleString()}</span>
+              </div>
+            ))}
+
+            <p className="tele-label" style={{ marginTop:'1.3rem' }}>DRIVETRAIN</p>
+            <div className="tele-dpad">
+              <div className="tele-wheel tele-wheel--fl" style={{ '--rpm-pct': `${((tele.motors[0]/1600)*100).toFixed(0)}%` }}>FL</div>
+              <div className="tele-wheel tele-wheel--fr" style={{ '--rpm-pct': `${((tele.motors[1]/1600)*100).toFixed(0)}%` }}>FR</div>
+              <div className="tele-wheel tele-wheel--bl" style={{ '--rpm-pct': `${((tele.motors[2]/1600)*100).toFixed(0)}%` }}>BL</div>
+              <div className="tele-wheel tele-wheel--br" style={{ '--rpm-pct': `${((tele.motors[3]/1600)*100).toFixed(0)}%` }}>BR</div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Footer ── */}
+        <div className="tele-footer">
+          <button className="ctrl-btn" style={{ fontSize:'.7rem', padding:'.3rem .8rem' }}
+            onClick={() => setPaused(v => !v)}>
+            {paused ? <><Play size={11}/> Resume</> : <><Pause size={11}/> Pause</>}
+          </button>
+          <span className="tele-conn">
+            <span className="tele-dot-live" style={{ animationPlayState: paused ? 'paused' : 'running' }} />
+            {paused ? 'PAUSED' : 'LIVE TELEMETRY'}
+          </span>
+          <span className="tele-fw">FTC SDK · Pedro Pathing</span>
         </div>
       </div>
     </motion.div>
@@ -480,10 +817,20 @@ function TeamMember({ m, i }) {
 
   const onMove = e => {
     const r = e.currentTarget.getBoundingClientRect();
-    rotXRaw.set(((e.clientY - r.top  - r.height / 2) / (r.height / 2)) * -9);
-    rotYRaw.set(((e.clientX - r.left - r.width  / 2) / (r.width  / 2)) *  9);
+    const hx = (e.clientX - r.left) / r.width;
+    const hy = (e.clientY - r.top)  / r.height;
+    rotXRaw.set((hy - 0.5) * -14);
+    rotYRaw.set((hx - 0.5) *  14);
+    e.currentTarget.style.setProperty('--hx',     `${(hx * 100).toFixed(1)}%`);
+    e.currentTarget.style.setProperty('--hy',     `${(hy * 100).toFixed(1)}%`);
+    e.currentTarget.style.setProperty('--hangle', `${(hx * 360).toFixed(0)}deg`);
   };
-  const onLeave = () => { rotXRaw.set(0); rotYRaw.set(0); };
+  const onLeave = e => {
+    rotXRaw.set(0); rotYRaw.set(0);
+    e.currentTarget.style.removeProperty('--hx');
+    e.currentTarget.style.removeProperty('--hy');
+    e.currentTarget.style.removeProperty('--hangle');
+  };
 
   return (
     <motion.div
@@ -499,6 +846,7 @@ function TeamMember({ m, i }) {
       <div className="member__avatar">
         <img src={m.img} alt={m.name} loading="lazy" />
       </div>
+      <div className="member__holo" aria-hidden="true" />
       <div className="member__overlay" />
       <div className="member__info">
         <p className="member__name">{m.name}</p>
@@ -509,6 +857,11 @@ function TeamMember({ m, i }) {
 }
 
 // ── PEDRO PATHING VISUALIZER ──────────────────────────────────────────
+// Unique bezier segments for control-point rendering (deduplicated by p1 reference)
+const BEZIER_CTRL_SEGS = AUTO_SEGMENTS
+  .filter(s => s.type === 'bezier' && s.p1)
+  .filter((s, i, arr) => arr.findIndex(x => x.p1 === s.p1) === i);
+
 function PedroVisualizer() {
   const t = useT();
   const [running, setRunning] = useState(true);
@@ -536,6 +889,8 @@ function PedroVisualizer() {
   const inY = bot ? ((SZ - bot.sy) / SZ * FIELD).toFixed(2) : "0.00";
   const hdg = bot ? bot.hdeg.toFixed(1) : "0.0";
 
+  const sliderVal = Math.round(prog * 1000);
+
   return (
     <motion.div
       className="pedro"
@@ -554,6 +909,7 @@ function PedroVisualizer() {
           <span><i className="dot" style={{background:'#a855f7'}}/>Collect</span>
           <span><i className="dot" style={{background:'#f472b6'}}/>Return</span>
           <span><i className="dot" style={{background:'#ffc516'}}/>Start</span>
+          <span><i style={{display:'inline-block',width:8,height:8,background:'rgba(255,197,22,.7)',border:'1.5px solid #ffc516',transform:'rotate(45deg)',marginRight:4}}/>Ctrl</span>
         </div>
       </div>
 
@@ -579,7 +935,7 @@ function PedroVisualizer() {
 
           <image href="/decode.webp" x="0" y="0" width={SZ} height={SZ}/>
 
-          {/* Each segment: glow halo + coloured line */}
+          {/* Path segments */}
           {AUTO_SEGMENTS.map((s, i) => (
             <g key={i}>
               <path d={segD(s)} fill="none" stroke={s.col} strokeWidth="22" strokeOpacity="0.13"
@@ -588,6 +944,24 @@ function PedroVisualizer() {
                 strokeLinecap="round" strokeLinejoin="round" filter="url(#glowLine)"/>
             </g>
           ))}
+
+          {/* Bezier control point handles */}
+          {BEZIER_CTRL_SEGS.map((s, i) => {
+            const sp0 = psvg(s.p0), sp1 = psvg(s.p1), sp2 = psvg(s.p2);
+            return (
+              <g key={`ctrl-${i}`}>
+                <line x1={sp0.sx} y1={sp0.sy} x2={sp1.sx} y2={sp1.sy}
+                  stroke="#ffc516" strokeWidth="1" strokeDasharray="4,3" strokeOpacity="0.45"/>
+                <line x1={sp2.sx} y1={sp2.sy} x2={sp1.sx} y2={sp1.sy}
+                  stroke="#ffc516" strokeWidth="1" strokeDasharray="4,3" strokeOpacity="0.45"/>
+                <rect
+                  x={sp1.sx - 5} y={sp1.sy - 5} width="10" height="10"
+                  fill="rgba(255,197,22,.18)" stroke="#ffc516" strokeWidth="1.5"
+                  transform={`rotate(45 ${sp1.sx} ${sp1.sy})`}
+                />
+              </g>
+            );
+          })}
 
           {/* Key waypoint dots + labels */}
           {FIELD_WAYPOINTS.map((wp, i) => {
@@ -606,23 +980,24 @@ function PedroVisualizer() {
             );
           })}
 
-          {/* Animated robot */}
+          {/* Animated robot — rotation by heading (-hdeg converts field→SVG) */}
           {bot && (
-            <g transform={`translate(${bot.sx},${bot.sy}) rotate(${bot.svgAngle})`}
+            <g transform={`translate(${bot.sx},${bot.sy}) rotate(${-bot.hdeg})`}
                filter="url(#glowBot)">
               <rect x={-half} y={-half} width={ROBOT_PX} height={ROBOT_PX} rx="3"
                 fill="url(#robotHatch)" clipPath="url(#robotClip)"/>
               <rect x={-half} y={-half} width={ROBOT_PX} height={ROBOT_PX} rx="3"
                 fill="none" stroke="#f472b6" strokeWidth="3"/>
               <circle cx="0" cy="0" r="5" fill="#ffc516"/>
-              {/* Direction arrow */}
-              <line x1="0" y1="0" x2={half + 6} y2="0" stroke="#fff" strokeWidth="1.5" strokeOpacity="0.85"/>
-              <polygon points={`${half+6},-3 ${half+12},0 ${half+6},3`} fill="#fff" fillOpacity="0.85"/>
+              {/* Heading arrow (robot "front") */}
+              <line x1="0" y1="0" x2={half + 6} y2="0" stroke="#fff" strokeWidth="1.5" strokeOpacity="0.9"/>
+              <polygon points={`${half+6},-3.5 ${half+13},0 ${half+6},3.5`} fill="#fff" fillOpacity="0.9"/>
             </g>
           )}
         </svg>
       </div>
 
+      {/* Controls */}
       <div className="pedro__controls">
         <button className="ctrl-btn" onClick={() => setRunning(v => !v)}>
           {running ? <Pause size={14}/> : <Play size={14}/>} {running ? t("btn.pause") : t("btn.play")}
@@ -630,6 +1005,28 @@ function PedroVisualizer() {
         <button className="ctrl-btn" onClick={() => { progRef.current = 0; setProg(0); setRunning(true); }}>
           <RotateCcw size={14}/> {t("btn.restart")}
         </button>
+      </div>
+
+      {/* Scrub slider */}
+      <div className="pedro__scrub">
+        <span className="scrub-label">Жол</span>
+        <input
+          type="range"
+          min="0"
+          max="1000"
+          step="1"
+          value={sliderVal}
+          className="scrub-slider"
+          style={{ '--val': `${(prog * 100).toFixed(1)}%` }}
+          onChange={e => {
+            const v = Number(e.target.value) / 1000;
+            progRef.current = v;
+            setProg(v);
+          }}
+          onMouseDown={() => setRunning(false)}
+          onTouchStart={() => setRunning(false)}
+        />
+        <span className="scrub-pct">{Math.round(prog * 100)}%</span>
       </div>
 
       <div className="pedro__stats">
@@ -774,47 +1171,96 @@ function AchievementsCarousel() {
 // ── PORTFOLIO ─────────────────────────────────────────────────────────
 function PortfolioCard({ item, i }) {
   const t = useT();
+  const [embedOpen, setEmbedOpen] = useState(false);
+
   return (
-    <motion.div
-      className="pf-card"
-      initial={{ opacity: 0, y: 32 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.1 }}
-      transition={{ duration: 0.55, delay: i * 0.12 }}
-    >
-      <div className="pf-preview" style={{ background: `linear-gradient(${item.grad})` }}>
-        <div className="pf-doc">
-          <div className="pf-doc__top">
-            <div className="pf-doc__brand">AlemX <em>#33655</em></div>
-            <div className="pf-doc__tag">FTC 2024–25</div>
+    <>
+      <motion.div
+        className="pf-card"
+        initial={{ opacity: 0, y: 32 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.1 }}
+        transition={{ duration: 0.55, delay: i * 0.12 }}
+      >
+        <div className="pf-preview" style={{ background: `linear-gradient(${item.grad})` }}>
+          <div className="pf-doc">
+            <div className="pf-doc__top">
+              <div className="pf-doc__brand">AlemX <em>#33655</em></div>
+              <div className="pf-doc__tag">FTC 2024–25</div>
+            </div>
+            <div className="pf-doc__h">{item.title}</div>
+            <div className="pf-doc__rows">
+              {[88,72,80,60,68,45].map((w,k)=><div key={k} className="pf-doc__row" style={{width:`${w}%`}}/>)}
+            </div>
+            <div className="pf-doc__chart">
+              {[55,70,40,85,60,75,50].map((h,k)=>(
+                <div key={k} className="pf-doc__bar" style={{height:`${h}%`}}/>
+              ))}
+            </div>
           </div>
-          <div className="pf-doc__h">{item.title}</div>
-          <div className="pf-doc__rows">
-            {[88,72,80,60,68,45].map((w,k)=><div key={k} className="pf-doc__row" style={{width:`${w}%`}}/>)}
+          <div className="pf-preview__corners"><span/><span/><span/><span/></div>
+        </div>
+        <div className="pf-footer">
+          <div>
+            <p className="pf-name">{item.title}</p>
+            <p className="pf-sub">{item.sub}</p>
           </div>
-          <div className="pf-doc__chart">
-            {[55,70,40,85,60,75,50].map((h,k)=>(
-              <div key={k} className="pf-doc__bar" style={{height:`${h}%`}}/>
-            ))}
+          <div className="pf-footer-btns">
+            {item.embedSrc && (
+              <button className="pf-btn pf-btn--ghost" onClick={() => setEmbedOpen(true)}>
+                <Eye size={14} /> Preview
+              </button>
+            )}
+            <a className="pf-btn" href={item.href} target="_blank" rel="noopener noreferrer">
+              <ExternalLink size={14} /> {t("btn.open")}
+            </a>
           </div>
         </div>
-        <div className="pf-preview__corners"><span/><span/><span/><span/></div>
-      </div>
-      <div className="pf-footer">
-        <div>
-          <p className="pf-name">{item.title}</p>
-          <p className="pf-sub">{item.sub}</p>
-        </div>
-        <a
-          className="pf-btn"
-          href={item.href}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <ExternalLink size={14} /> {t("btn.open")}
-        </a>
-      </div>
-    </motion.div>
+      </motion.div>
+
+      <AnimatePresence>
+        {embedOpen && (
+          <motion.div
+            className="pf-embed-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.22 }}
+            onClick={() => setEmbedOpen(false)}
+          >
+            <motion.div
+              className="pf-embed-modal"
+              initial={{ opacity: 0, scale: 0.92, y: 28 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.92, y: 28 }}
+              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="pf-embed-header">
+                <span className="pf-embed-title">{item.title}</span>
+                <button className="pf-embed-close" onClick={() => setEmbedOpen(false)}>
+                  <X size={16} />
+                </button>
+              </div>
+              <div className="pf-embed-body">
+                <iframe
+                  src={item.embedSrc}
+                  className="pf-embed-iframe"
+                  allowFullScreen
+                  title={item.title}
+                  loading="lazy"
+                />
+              </div>
+              <div className="pf-embed-footer">
+                <a href={item.href} target="_blank" rel="noopener noreferrer" className="pf-btn">
+                  <ExternalLink size={14} /> Canva-да ашу
+                </a>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 }
 
@@ -909,22 +1355,18 @@ export default function App() {
   const [splash, setSplash] = useState(true);
 
   useEffect(() => {
-    const update = () => scrollY.set(window.scrollY);
-    window.addEventListener("scroll", update, { passive: true });
-    return () => window.removeEventListener("scroll", update);
-  }, [scrollY]);
-
-  useEffect(() => {
     const lenis = new Lenis({
-      duration: 1.15,
+      duration: 1.35,
       easing: x => Math.min(1, 1.001 - Math.pow(2, -10 * x)),
       smoothWheel: true,
+      wheelMultiplier: 0.9,
     });
+    lenis.on('scroll', ({ scroll }) => scrollY.set(scroll));
     let rafId;
     const raf = ts => { lenis.raf(ts); rafId = requestAnimationFrame(raf); };
     rafId = requestAnimationFrame(raf);
     return () => { cancelAnimationFrame(rafId); lenis.destroy(); };
-  }, []);
+  }, [scrollY]);
 
   return (
     <div className="app-shell">
@@ -937,6 +1379,7 @@ export default function App() {
       <div className="bg-grid" />
 
       <Navbar scrollY={scrollY} />
+      <MobileNav />
 
       <main>
         <Hero scrollY={scrollY} />
