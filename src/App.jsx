@@ -259,7 +259,7 @@ const teamMembers = [
   { name: "Merey",              role: "Main Coder",        img: "https://i.ibb.co.com/nMSXzT58/Merey.jpg" },
   { name: "Zhienbek",           role: "Junior Coder",      img: "https://i.ibb.co.com/Kj4YVMYk/zhora.jpg" },
   { name: "Tamerlan",           role: "Designer",          img: "https://i.ibb.co.com/6JpzNW7D/Tamer.jpg" },
-  { name: "Zhandos",            role: "Auto Coder",        img: "https://i.ibb.co.com/5WJwH14n/Zhandos.jpg" },
+  { name: "Zhandos",            role: "Auto Coder",        img: "https://i.yapx.ru/d5NJu.png" },
   { name: "Sabina",             role: "SMM",               img: "https://i.ibb.co.com/JR9ZR9Sj/sssabina.jpg" },
   { name: "Tannur",             role: "SMM",               img: "https://i.ibb.co.com/bgmkFzPz/Tannur.jpg" },
 ];
