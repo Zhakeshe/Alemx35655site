@@ -1817,7 +1817,6 @@ function Sec({ id, eye, title, desc, children, cls="" }) {
 // ── FTC SCOUT PAGE ────────────────────────────────────────────────────
 function FTCScoutPage({ onClose }) {
   const t = useT();
-  useEffect(() => { document.body.style.overflow = "hidden"; return () => { document.body.style.overflow = ""; }; }, []);
   return (
     <div className="sub-page">
       <div className="sub-page__topbar">
@@ -1850,7 +1849,6 @@ const TC_TABS = [
 function TechCupPage({ onClose }) {
   const t = useT();
   const [tab, setTab] = useState("teams");
-  useEffect(() => { document.body.style.overflow = "hidden"; return () => { document.body.style.overflow = ""; }; }, []);
   return (
     <div className="sub-page">
       <div className="sub-page__topbar">
@@ -1907,12 +1905,22 @@ function TechCupComingSoon({ label, t }) {
     </div>
   );
 }
+// ── URL helpers ───────────────────────────────────────────────────────
+const getPathPage = () => {
+  const p = window.location.pathname.replace(/\/+$/, "");
+  if (p === "/ftcscout") return "ftcscout";
+  if (p === "/techcup")  return "techcup";
+  return null;
+};
+
 // ── APP ───────────────────────────────────────────────────────────────
 export default function App() {
   const t          = useT();
   const scrollY    = useMotionValue(0);
-  const [pageView, setPageView] = useState(null);
+  const lenisRef   = useRef(null);
+  const [pageView, setPageView] = useState(getPathPage);
 
+  // Lenis smooth scroll
   useEffect(() => {
     const lenis = new Lenis({
       duration: 1.2,
@@ -1920,12 +1928,40 @@ export default function App() {
       smoothWheel: true,
       wheelMultiplier: 0.85,
     });
-    lenis.on('scroll', ({ scroll }) => scrollY.set(scroll));
+    lenisRef.current = lenis;
+    // if page opened via direct URL, stop immediately
+    if (getPathPage()) lenis.stop();
+    lenis.on("scroll", ({ scroll }) => scrollY.set(scroll));
     let rafId;
     const raf = ts => { lenis.raf(ts); rafId = requestAnimationFrame(raf); };
     rafId = requestAnimationFrame(raf);
-    return () => { cancelAnimationFrame(rafId); lenis.destroy(); };
+    return () => { cancelAnimationFrame(rafId); lenis.destroy(); lenisRef.current = null; };
   }, [scrollY]);
+
+  // Stop/resume Lenis when sub-page opens/closes
+  useEffect(() => {
+    const l = lenisRef.current;
+    if (!l) return;
+    pageView ? l.stop() : l.start();
+  }, [pageView]);
+
+  // URL navigation
+  const openPage = useCallback((page) => {
+    setPageView(page);
+    window.history.pushState({ page }, "", `/${page}`);
+  }, []);
+
+  const closePage = useCallback(() => {
+    setPageView(null);
+    window.history.pushState({}, "", "/");
+  }, []);
+
+  // Browser back / forward
+  useEffect(() => {
+    const onPop = () => setPageView(getPathPage());
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
 
   return (
     <div className="app-shell">
@@ -1934,8 +1970,8 @@ export default function App() {
       <div className="bg-orb bg-orb--2" />
       <div className="bg-grid" />
 
-      <Navbar scrollY={scrollY} onOpenPage={setPageView} />
-      <MobileNav onOpenPage={setPageView} />
+      <Navbar scrollY={scrollY} onOpenPage={openPage} />
+      <MobileNav onOpenPage={openPage} />
 
       <main>
         <Hero scrollY={scrollY} />
@@ -1989,8 +2025,8 @@ export default function App() {
             transition={{ duration: 0.42, ease: [0.16, 1, 0.3, 1] }}
           >
             {pageView === "ftcscout"
-              ? <FTCScoutPage onClose={() => setPageView(null)} />
-              : <TechCupPage  onClose={() => setPageView(null)} />
+              ? <FTCScoutPage onClose={closePage} />
+              : <TechCupPage  onClose={closePage} />
             }
           </motion.div>
         )}
