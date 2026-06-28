@@ -335,7 +335,7 @@ async function ftcGql(query, variables) {
 }
 
 const Q_SEARCH = `query($q:String!,$l:Int){teamsSearch(searchText:$q,limit:$l){number name location{city state country}rookieYear}}`;
-const Q_TEAM   = `query($n:Int!,$s:Int!){teamByNumber(number:$n){number name schoolName location{city state country}rookieYear quickStats(season:$s){count tot{value rank}auto{value rank}dc{value rank}eg{value rank}}events(season:$s){event{name location{city}start}stats{...on TeamEventStats2019{rank wins losses ties}...on TeamEventStats2022{rank wins losses ties}...on TeamEventStats2023{rank wins losses ties}...on TeamEventStats2024{rank wins losses ties}...on TeamEventStats2025{rank wins losses ties rp}}awards{award{name}placement}}matches(season:$s){alliance allianceRole match{hasBeenPlayed tournamentLevel matchNum description event{name}teams{teamNumber alliance onField noShow}scores{...on MatchScores2025{red{totalPoints autoPoints dcPoints}blue{totalPoints autoPoints dcPoints}}}}}}}`
+const Q_TEAM   = `query($n:Int!,$s:Int!){teamByNumber(number:$n){number name schoolName location{city state country}rookieYear quickStats(season:$s){count tot{value rank}auto{value rank}dc{value rank}eg{value rank}}events(season:$s){event{name location{city}start}stats{...on TeamEventStats2019{rank wins losses ties}...on TeamEventStats2022{rank wins losses ties}...on TeamEventStats2023{rank wins losses ties}...on TeamEventStats2024{rank wins losses ties}...on TeamEventStats2025{rank wins losses ties rp}}awards{name}}matches(season:$s){alliance allianceRole match{hasBeenPlayed tournamentLevel matchNum description event{name}teams{teamNumber alliance onField noShow}scores{...on MatchScores2025{red{totalPoints autoPoints dcPoints}blue{totalPoints autoPoints dcPoints}}}}}}}`
 
 const timeline = [
   { dateKey: "tl.0.date", phaseKey: "tl.0.phase", descKey: "tl.0.desc", col: "#a855f7" },
@@ -1388,9 +1388,7 @@ function TeamDetailCard({ team, onBack, t }) {
                   {ev.awards?.length > 0 && (
                     <div className="ts-ev-awards">
                       {ev.awards.map((a, j) => (
-                        <span key={j} className="ts-ev-award">
-                          {a.placement ? `${a.placement}. ` : ""}{a.award.name}
-                        </span>
+                        <span key={j} className="ts-ev-award">{a.name}</span>
                       ))}
                     </div>
                   )}
