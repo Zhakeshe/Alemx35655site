@@ -160,47 +160,119 @@ const timeline = [
 // Y is flipped for screen (y=0 → bottom of image, y=141.5 → top).
 const FIELD    = 141.5;
 const SZ       = 600;
-const ROBOT_PX = Math.round((16 / FIELD) * SZ); // 16" robot → ~68px
+const ROBOT_PX = Math.round((16 / FIELD) * SZ);
 
-// Demo auto path in Pedro inches (DECODE 2025–26)
-const AUTO_PATH = [
-  { x: 70, y: 10  },
-  { x: 70, y: 71  },
-  { x: 35, y: 71  },
-  { x: 12, y: 100 },
-  { x: 35, y: 130 },
-  { x: 70, y: 130 },
+function toSx(x) { return (x / FIELD) * SZ; }
+function toSy(y) { return SZ - (y / FIELD) * SZ; }
+function psvg(p) { return { sx: toSx(p.x), sy: toSy(p.y) }; }
+
+// Key poses from AutoRed.java (x, y in inches; deg = heading in degrees)
+const P = {
+  start:    { x: 105,                  y: 134,                 deg: 0  },
+  shoot:    { x: 93.2111801242236,     y: 83.95496894409939,   deg: 0  },
+  c1:       { x: 124,                  y: 64,                  deg: 0  },
+  ctrl1:    { x: 84.59549689440996,    y: 62,                  deg: 0  },
+  rCtrl1:   { x: 105.24245016260936,   y: 71.7388417843294,    deg: 0  },
+  c2:       { x: 119,                  y: 93,                  deg: 0  },
+  gate:     { x: 127,                  y: 66.5,                deg: 20 },
+  gateDeep: { x: 130.22558355503236,   y: 58.46836679847239,   deg: 0  },
+  gateCtrl: { x: 124.81271413776464,   y: 58.211667871285876,  deg: 0  },
+  park:     { x: 108,                  y: 58,                  deg: 0  },
+};
+
+// Full path sequence matching AutoRed.java state machine
+const AUTO_SEGMENTS = [
+  { type:'line',   p0:P.start,    p2:P.shoot,                    col:'#ffc516', state:'START'  },
+  { type:'bezier', p0:P.shoot,    p1:P.ctrl1,    p2:P.c1,        col:'#a855f7', state:'COL 1'  },
+  { type:'bezier', p0:P.c1,       p1:P.rCtrl1,   p2:P.shoot,     col:'#f472b6', state:'RET 1'  },
+  { type:'line',   p0:P.shoot,    p2:P.c2,                       col:'#a855f7', state:'COL 2'  },
+  { type:'line',   p0:P.c2,       p2:P.shoot,                    col:'#f472b6', state:'RET 2'  },
+  { type:'line',   p0:P.shoot,    p2:P.gate,                     col:'#a855f7', state:'COL 3'  },
+  { type:'bezier', p0:P.gate,     p1:P.gateCtrl, p2:P.gateDeep,  col:'#c084fc', state:'GATE'   },
+  { type:'line',   p0:P.gateDeep, p2:P.shoot,                    col:'#f472b6', state:'RET 3'  },
+  { type:'line',   p0:P.shoot,    p2:P.gate,                     col:'#a855f7', state:'COL 4'  },
+  { type:'bezier', p0:P.gate,     p1:P.gateCtrl, p2:P.gateDeep,  col:'#c084fc', state:'GATE'   },
+  { type:'line',   p0:P.gateDeep, p2:P.shoot,                    col:'#f472b6', state:'RET 4'  },
+  { type:'line',   p0:P.shoot,    p2:P.park,                     col:'#7c3aed', state:'PARK'   },
 ];
 
-const SVG_PTS = AUTO_PATH.map(({ x, y }) => ({
-  sx: (x / FIELD) * SZ,
-  sy: SZ - (y / FIELD) * SZ,
-}));
+// Named waypoints shown as labels on the field
+const FIELD_WAYPOINTS = [
+  { p: P.start,    label: 'START', col: '#ffc516' },
+  { p: P.shoot,    label: 'SHOOT', col: '#ef4444' },
+  { p: P.c1,       label: '#1',    col: '#a855f7' },
+  { p: P.c2,       label: '#2',    col: '#a855f7' },
+  { p: P.gate,     label: 'GATE',  col: '#c084fc' },
+  { p: P.gateDeep, label: 'DEEP',  col: '#c084fc' },
+  { p: P.park,     label: 'PARK',  col: '#7c3aed' },
+];
 
-function lerpPath(pts, t) {
-  const segs = []; let total = 0;
-  for (let i = 0; i < pts.length - 1; i++) {
-    const dx = pts[i+1].sx - pts[i].sx, dy = pts[i+1].sy - pts[i].sy;
-    const len = Math.hypot(dx, dy);
-    segs.push({ a: pts[i], b: pts[i+1], len }); total += len;
+// Build SVG path string for a segment (line or quadratic Bezier)
+function segD(s) {
+  const sp0 = psvg(s.p0), sp2 = psvg(s.p2);
+  if (s.type === 'bezier' && s.p1) {
+    const sp1 = psvg(s.p1);
+    return `M${sp0.sx.toFixed(1)},${sp0.sy.toFixed(1)} Q${sp1.sx.toFixed(1)},${sp1.sy.toFixed(1)} ${sp2.sx.toFixed(1)},${sp2.sy.toFixed(1)}`;
   }
-  let rem = total * t;
-  for (const s of segs) {
-    if (rem <= s.len) {
-      const r = s.len ? rem / s.len : 0;
-      return { sx: s.a.sx + (s.b.sx - s.a.sx) * r, sy: s.a.sy + (s.b.sy - s.a.sy) * r };
-    }
-    rem -= s.len;
-  }
-  return pts.at(-1);
+  return `M${sp0.sx.toFixed(1)},${sp0.sy.toFixed(1)} L${sp2.sx.toFixed(1)},${sp2.sy.toFixed(1)}`;
 }
 
-function pathHeading(t) {
-  const eps = 0.008;
-  const p1 = lerpPath(SVG_PTS, Math.max(0, t - eps));
-  const p2 = lerpPath(SVG_PTS, Math.min(1, t + eps));
-  if (!p1 || !p2) return 0;
-  return (Math.atan2(p2.sy - p1.sy, p2.sx - p1.sx) * 180) / Math.PI;
+// Pre-sample the full path into a polyline for smooth animation
+const SPP = 60;
+
+function buildAutoPoly() {
+  const pts = [];
+  for (let si = 0; si < AUTO_SEGMENTS.length; si++) {
+    const s = AUTO_SEGMENTS[si];
+    const sp0 = psvg(s.p0), sp2 = psvg(s.p2);
+    const sp1 = s.p1 ? psvg(s.p1) : null;
+    const h0 = s.p0.deg, h2 = s.p2.deg;
+    for (let i = (si === 0 ? 0 : 1); i <= SPP; i++) {
+      const t = i / SPP;
+      let px, py;
+      if (s.type === 'bezier' && sp1) {
+        const mt = 1 - t;
+        px = mt*mt*sp0.sx + 2*mt*t*sp1.sx + t*t*sp2.sx;
+        py = mt*mt*sp0.sy + 2*mt*t*sp1.sy + t*t*sp2.sy;
+      } else {
+        px = sp0.sx + (sp2.sx - sp0.sx) * t;
+        py = sp0.sy + (sp2.sy - sp0.sy) * t;
+      }
+      pts.push({ sx: px, sy: py, segIdx: si, hdeg: h0 + (h2 - h0) * t });
+    }
+  }
+  return pts;
+}
+
+function buildDistTable(pts) {
+  const dist = [0];
+  for (let i = 1; i < pts.length; i++)
+    dist.push(dist[i-1] + Math.hypot(pts[i].sx - pts[i-1].sx, pts[i].sy - pts[i-1].sy));
+  return dist;
+}
+
+const AUTO_POLY = buildAutoPoly();
+const AUTO_DIST = buildDistTable(AUTO_POLY);
+
+function lerpAutoPoly(t) {
+  const total  = AUTO_DIST[AUTO_DIST.length - 1];
+  const target = total * t;
+  let lo = 0, hi = AUTO_DIST.length - 1;
+  while (lo < hi - 1) {
+    const mid = (lo + hi) >> 1;
+    if (AUTO_DIST[mid] < target) lo = mid; else hi = mid;
+  }
+  const span = AUTO_DIST[hi] - AUTO_DIST[lo];
+  const r    = span > 0 ? (target - AUTO_DIST[lo]) / span : 0;
+  const a    = AUTO_POLY[lo];
+  const b    = AUTO_POLY[Math.min(hi, AUTO_POLY.length - 1)];
+  return {
+    sx:       a.sx + (b.sx - a.sx) * r,
+    sy:       a.sy + (b.sy - a.sy) * r,
+    svgAngle: Math.atan2(b.sy - a.sy, b.sx - a.sx) * 180 / Math.PI,
+    hdeg:     a.hdeg + (b.hdeg - a.hdeg) * r,
+    segIdx:   a.segIdx,
+  };
 }
 
 // ── SOCIAL ICONS ─────────────────────────────────────────────────────
@@ -440,14 +512,14 @@ function TeamMember({ m, i }) {
 function PedroVisualizer() {
   const t = useT();
   const [running, setRunning] = useState(true);
-  const [prog, setProg] = useState(0);
-  const progRef = useRef(0);
+  const [prog, setProg]       = useState(0);
+  const progRef               = useRef(0);
 
   useEffect(() => {
     let raf, last = 0;
     const tick = ts => {
       if (running) {
-        if (last) { progRef.current = (progRef.current + (ts - last) / 9000) % 1; setProg(progRef.current); }
+        if (last) { progRef.current = (progRef.current + (ts - last) / 18000) % 1; setProg(progRef.current); }
         last = ts;
       } else { last = 0; }
       raf = requestAnimationFrame(tick);
@@ -456,14 +528,13 @@ function PedroVisualizer() {
     return () => cancelAnimationFrame(raf);
   }, [running]);
 
-  const bot     = useMemo(() => lerpPath(SVG_PTS, prog), [prog]);
-  const heading = useMemo(() => pathHeading(prog), [prog]);
-  const poly    = SVG_PTS.map(p => `${p.sx},${p.sy}`).join(" ");
+  const bot  = useMemo(() => lerpAutoPoly(prog), [prog]);
+  const half = ROBOT_PX / 2;
+  const seg  = AUTO_SEGMENTS[bot?.segIdx ?? 0];
 
-  const inX  = bot ? ((bot.sx / SZ) * FIELD).toFixed(1) : "0.0";
-  const inY  = bot ? (FIELD - (bot.sy / SZ) * FIELD).toFixed(1) : "0.0";
-  const wpIdx = Math.min(Math.floor(prog * (AUTO_PATH.length - 1)) + 1, AUTO_PATH.length);
-  const half  = ROBOT_PX / 2;
+  const inX = bot ? (bot.sx / SZ * FIELD).toFixed(2) : "0.00";
+  const inY = bot ? ((SZ - bot.sy) / SZ * FIELD).toFixed(2) : "0.00";
+  const hdg = bot ? bot.hdeg.toFixed(1) : "0.0";
 
   return (
     <motion.div
@@ -480,24 +551,22 @@ function PedroVisualizer() {
           <p>{t("pedro.sub")}</p>
         </div>
         <div className="pedro__legend">
-          <span><i className="dot dot--red"/>Red</span>
-          <span><i className="dot dot--blue"/>Blue</span>
+          <span><i className="dot" style={{background:'#a855f7'}}/>Collect</span>
+          <span><i className="dot" style={{background:'#f472b6'}}/>Return</span>
+          <span><i className="dot" style={{background:'#ffc516'}}/>Start</span>
         </div>
       </div>
 
       <div className="pedro__field">
         <svg viewBox={`0 0 ${SZ} ${SZ}`} className="pedro__svg">
           <defs>
-            {/* Cross-hatch fill for robot body */}
             <pattern id="robotHatch" patternUnits="userSpaceOnUse" width="10" height="10"
               patternTransform="rotate(45 0 0)">
               <line x1="0" y1="0" x2="0" y2="10" stroke="#f472b6" strokeWidth="2" strokeOpacity="0.65"/>
             </pattern>
-            {/* Clip robot shape */}
             <clipPath id="robotClip">
               <rect x={-half} y={-half} width={ROBOT_PX} height={ROBOT_PX} rx="3"/>
             </clipPath>
-            {/* Glow filters */}
             <filter id="glowBot" x="-30%" y="-30%" width="160%" height="160%">
               <feGaussianBlur stdDeviation="4" result="b"/>
               <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
@@ -508,37 +577,47 @@ function PedroVisualizer() {
             </filter>
           </defs>
 
-          {/* DECODE field image */}
           <image href="/decode.webp" x="0" y="0" width={SZ} height={SZ}/>
 
-          {/* Path: subtle glow then solid line */}
-          <polyline fill="none" stroke="rgba(255,197,22,0.22)" strokeWidth="26"
-            strokeLinecap="round" strokeLinejoin="round" points={poly}/>
-          <polyline fill="none" stroke="#ffc516" strokeWidth="3"
-            strokeLinecap="round" strokeLinejoin="round" points={poly}
-            filter="url(#glowLine)"/>
-
-          {/* Waypoint dots */}
-          {SVG_PTS.map((p, i) => (
+          {/* Each segment: glow halo + coloured line */}
+          {AUTO_SEGMENTS.map((s, i) => (
             <g key={i}>
-              <circle cx={p.sx} cy={p.sy} r="9"  fill="rgba(255,197,22,0.18)"/>
-              <circle cx={p.sx} cy={p.sy} r="5"  fill="#ffc516"/>
-              <circle cx={p.sx} cy={p.sy} r="9"  fill="none" stroke="#ffc516" strokeWidth="1.5" strokeOpacity="0.55"/>
+              <path d={segD(s)} fill="none" stroke={s.col} strokeWidth="22" strokeOpacity="0.13"
+                strokeLinecap="round" strokeLinejoin="round"/>
+              <path d={segD(s)} fill="none" stroke={s.col} strokeWidth="2.5"
+                strokeLinecap="round" strokeLinejoin="round" filter="url(#glowLine)"/>
             </g>
           ))}
 
-          {/* Robot — Pedro-style: cross-hatch rect + border + center dot */}
+          {/* Key waypoint dots + labels */}
+          {FIELD_WAYPOINTS.map((wp, i) => {
+            const { sx: wx, sy: wy } = psvg(wp.p);
+            return (
+              <g key={i}>
+                <circle cx={wx} cy={wy} r="10" fill={wp.col} fillOpacity="0.18"/>
+                <circle cx={wx} cy={wy} r="5"  fill={wp.col}/>
+                <circle cx={wx} cy={wy} r="10" fill="none" stroke={wp.col} strokeWidth="1.5" strokeOpacity="0.6"/>
+                <text x={wx} y={wy - 13} textAnchor="middle"
+                  fill="#fff" fontSize="9" fontWeight="700" fontFamily="monospace"
+                  stroke="rgba(0,0,0,0.85)" strokeWidth="3" paintOrder="stroke">
+                  {wp.label}
+                </text>
+              </g>
+            );
+          })}
+
+          {/* Animated robot */}
           {bot && (
-            <g transform={`translate(${bot.sx},${bot.sy}) rotate(${heading})`}
+            <g transform={`translate(${bot.sx},${bot.sy}) rotate(${bot.svgAngle})`}
                filter="url(#glowBot)">
-              {/* Hatch fill */}
               <rect x={-half} y={-half} width={ROBOT_PX} height={ROBOT_PX} rx="3"
                 fill="url(#robotHatch)" clipPath="url(#robotClip)"/>
-              {/* Outer border */}
               <rect x={-half} y={-half} width={ROBOT_PX} height={ROBOT_PX} rx="3"
                 fill="none" stroke="#f472b6" strokeWidth="3"/>
-              {/* Center dot */}
               <circle cx="0" cy="0" r="5" fill="#ffc516"/>
+              {/* Direction arrow */}
+              <line x1="0" y1="0" x2={half + 6} y2="0" stroke="#fff" strokeWidth="1.5" strokeOpacity="0.85"/>
+              <polygon points={`${half+6},-3 ${half+12},0 ${half+6},3`} fill="#fff" fillOpacity="0.85"/>
             </g>
           )}
         </svg>
@@ -554,9 +633,12 @@ function PedroVisualizer() {
       </div>
 
       <div className="pedro__stats">
-        {[["X (in)", inX], ["Y (in)", inY],
-          ["WP", `${wpIdx}/${AUTO_PATH.length}`],
-          ["State", running ? "Moving" : "Paused"]].map(([k, v]) => (
+        {[
+          ["X (in)", inX],
+          ["Y (in)", inY],
+          ["Heading", `${hdg}°`],
+          ["State", seg?.state ?? "—"],
+        ].map(([k, v]) => (
           <div key={k} className="pstat">
             <span>{k}</span><strong>{v}</strong>
           </div>
