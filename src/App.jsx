@@ -888,32 +888,27 @@ function RobotStage() {
 
 // ── TEAM ──────────────────────────────────────────────────────────────
 function TeamMember({ m, i }) {
-  const rotXRaw = useMotionValue(0);
-  const rotYRaw = useMotionValue(0);
-  const rotX = useSpring(rotXRaw, { stiffness: 260, damping: 22 });
-  const rotY = useSpring(rotYRaw, { stiffness: 260, damping: 22 });
-
   const onMove = e => {
-    const r = e.currentTarget.getBoundingClientRect();
+    const el = e.currentTarget;
+    const r  = el.getBoundingClientRect();
     const hx = (e.clientX - r.left) / r.width;
     const hy = (e.clientY - r.top)  / r.height;
-    rotXRaw.set((hy - 0.5) * -14);
-    rotYRaw.set((hx - 0.5) *  14);
-    e.currentTarget.style.setProperty('--hx',     `${(hx * 100).toFixed(1)}%`);
-    e.currentTarget.style.setProperty('--hy',     `${(hy * 100).toFixed(1)}%`);
-    e.currentTarget.style.setProperty('--hangle', `${(hx * 360).toFixed(0)}deg`);
+    el.style.transform = `perspective(700px) rotateX(${((hy-0.5)*-14).toFixed(1)}deg) rotateY(${((hx-0.5)*14).toFixed(1)}deg)`;
+    el.style.setProperty('--hx',     `${(hx * 100).toFixed(1)}%`);
+    el.style.setProperty('--hy',     `${(hy * 100).toFixed(1)}%`);
+    el.style.setProperty('--hangle', `${(hx * 360).toFixed(0)}deg`);
   };
   const onLeave = e => {
-    rotXRaw.set(0); rotYRaw.set(0);
-    e.currentTarget.style.removeProperty('--hx');
-    e.currentTarget.style.removeProperty('--hy');
-    e.currentTarget.style.removeProperty('--hangle');
+    const el = e.currentTarget;
+    el.style.transform = '';
+    el.style.removeProperty('--hx');
+    el.style.removeProperty('--hy');
+    el.style.removeProperty('--hangle');
   };
 
   return (
     <motion.div
       className="member"
-      style={{ rotateX: rotX, rotateY: rotY, transformPerspective: 700 }}
       initial={{ opacity: 0, y: 36 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.05 }}

@@ -190,7 +190,7 @@ img { display: block; max-width: 100%; }
 }
 .bg-orb {
   position: fixed; border-radius: 999px;
-  filter: blur(72px); pointer-events: none; z-index: 0;
+  filter: blur(36px); pointer-events: none; z-index: 0;
   will-change: transform; transform: translateZ(0);
 }
 .bg-orb--1 { width:44rem;height:44rem;top:-20rem;left:-18rem;background:rgba(88,18,180,0.22);animation:orb1 22s ease-in-out infinite; }
@@ -429,8 +429,8 @@ img { display: block; max-width: 100%; }
     linear-gradient(145deg,rgba(109,40,217,.5),rgba(168,85,247,.8),rgba(192,132,252,.5)) border-box;
   border:1.5px solid transparent;
   transition:
-    transform .5s cubic-bezier(.34,1.56,.64,1),
-    box-shadow .45s,opacity .3s;
+    transform .12s ease,
+    box-shadow .3s,opacity .3s;
   transform-style:preserve-3d;
   will-change:transform;
 }
@@ -908,9 +908,10 @@ img { display: block; max-width: 100%; }
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
 }
 
-/* ── HERO AURORA ── */
+/* ── HERO AURORA (static — no animation = zero per-frame GPU recomposite) ── */
 .hero-aurora {
   position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden;
+  contain:paint;
 }
 .aurora-blob {
   position:absolute;border-radius:50%;pointer-events:none;
@@ -919,37 +920,19 @@ img { display: block; max-width: 100%; }
   width:65vw;height:55vw;
   background:radial-gradient(circle,rgba(124,58,237,.28),rgba(109,40,217,0) 65%);
   top:-20%;left:-14%;
-  filter:blur(48px);
-  will-change:transform;transform:translateZ(0);
-  animation:aurora-drift1 18s ease-in-out infinite alternate;
+  filter:blur(40px);
 }
 .aurora-blob--2 {
   width:52vw;height:46vw;
   background:radial-gradient(circle,rgba(232,121,249,.22),rgba(232,121,249,0) 62%);
   top:5%;right:-10%;
-  filter:blur(56px);
-  will-change:transform;transform:translateZ(0);
-  animation:aurora-drift2 22s ease-in-out infinite alternate;
+  filter:blur(44px);
 }
 .aurora-blob--3 {
   width:42vw;height:42vw;
   background:radial-gradient(circle,rgba(79,70,229,.18),rgba(79,70,229,0) 62%);
   bottom:-14%;left:25%;
-  filter:blur(60px);
-  will-change:transform;transform:translateZ(0);
-  animation:aurora-drift3 26s ease-in-out infinite alternate;
-}
-@keyframes aurora-drift1 {
-  from { transform:translate(0,0) scale(1);    }
-  to   { transform:translate(9%,14%) scale(1.22); }
-}
-@keyframes aurora-drift2 {
-  from { transform:translate(0,0) scale(1);      }
-  to   { transform:translate(-11%,7%) scale(1.16); }
-}
-@keyframes aurora-drift3 {
-  from { transform:translate(0,0) scale(1);    }
-  to   { transform:translate(6%,-11%) scale(1.28); }
+  filter:blur(48px);
 }
 
 /* ── LIVE TELEMETRY ── */
