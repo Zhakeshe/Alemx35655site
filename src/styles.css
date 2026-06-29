@@ -1465,17 +1465,15 @@ img { display: block; max-width: 100%; }
 .sub-page-wrap {
   position:fixed;inset:0;z-index:500;
   background:#040010;
-  overflow-y:auto;
-  overflow-x:hidden;
+  overflow:hidden; /* scroll happens inside .sub-page__body */
 }
 .sub-page {
-  min-height:100vh;
+  height:100vh;
   display:flex;flex-direction:column;
 }
 .sub-page__topbar {
-  position:sticky;top:0;z-index:10;
   display:flex;align-items:center;gap:1.2rem;
-  padding:1rem 1.4rem;
+  padding:1rem 1.4rem;flex-shrink:0;
   background:rgba(4,0,16,.88);
   backdrop-filter:blur(14px);
   border-bottom:1px solid rgba(168,85,247,.12);
@@ -1498,8 +1496,11 @@ img { display: block; max-width: 100%; }
   color:#fff;line-height:1;
 }
 .sub-page__body {
-  flex:1;padding:2rem 1.4rem;
+  flex:1;min-height:0; /* critical for flex scroll */
+  overflow-y:auto;overflow-x:hidden;
+  padding:2rem 1.4rem;
   max-width:900px;width:100%;margin:0 auto;
+  scrollbar-width:thin;scrollbar-color:rgba(168,85,247,.2) transparent;
 }
 
 /* ── TECH CUP TABS ── */
@@ -1507,7 +1508,7 @@ img { display: block; max-width: 100%; }
   display:flex;gap:.5rem;padding:.75rem 1.4rem;
   border-bottom:1px solid rgba(168,85,247,.1);
   background:rgba(4,0,16,.6);
-  overflow-x:auto;
+  overflow-x:auto;flex-shrink:0;
 }
 .tc-tab {
   background:none;border:1px solid rgba(168,85,247,.15);
@@ -1526,6 +1527,7 @@ img { display: block; max-width: 100%; }
   display:flex;flex-direction:column;align-items:center;gap:.55rem;
   padding:1rem 1.4rem .6rem;border-bottom:1px solid rgba(168,85,247,.1);
   background:linear-gradient(180deg,rgba(109,40,217,.06),transparent);
+  flex-shrink:0;
 }
 .tc-countdown__label {
   font-size:.64rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
@@ -1567,11 +1569,11 @@ img { display: block; max-width: 100%; }
 
 /* ── TECH CUP CHAT ── */
 .sub-page__body--chat {
-  display:flex;flex-direction:column;padding:0;max-width:100%;
+  display:flex;flex-direction:column;padding:0;max-width:100%;overflow:hidden;
 }
-.sub-page__body--chat > div { display:flex;flex-direction:column;flex:1;height:100%; }
+.sub-page__body--chat > div { display:flex;flex-direction:column;flex:1;min-height:0; }
 .tc-chat {
-  display:flex;flex-direction:column;height:calc(100vh - 220px);
+  display:flex;flex-direction:column;flex:1;min-height:0;
   max-width:760px;margin:0 auto;width:100%;padding:0 1.4rem;
 }
 .tc-chat__msgs {

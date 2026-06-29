@@ -2188,6 +2188,11 @@ export default function App() {
   const lenisRef   = useRef(null);
   const [pageView, setPageView] = useState(getPathPage);
 
+  // Clean up old localStorage keys from previous version
+  useEffect(() => {
+    ["__al_history", "__al_seeded", "__al_online"].forEach(k => localStorage.removeItem(k));
+  }, []);
+
   // Lenis smooth scroll
   useEffect(() => {
     const lenis = new Lenis({
@@ -2210,13 +2215,7 @@ export default function App() {
   useEffect(() => {
     const l = lenisRef.current;
     if (!l) return;
-    if (pageView) {
-      l.stop();
-      // Lenis.stop() sets overflow:clip on <html> which prevents the fixed overlay from scrolling
-      requestAnimationFrame(() => document.documentElement.style.removeProperty('overflow'));
-    } else {
-      l.start();
-    }
+    pageView ? l.stop() : l.start();
   }, [pageView]);
 
   // URL navigation
