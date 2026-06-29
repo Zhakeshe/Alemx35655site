@@ -1,6 +1,3 @@
-import { initializeApp } from "firebase/app";
-import { getDatabase } from "firebase/database";
-
 // ═══════════════════════════════════════════════════════════════
 //  FIREBASE КОНФИГУРАЦИЯСЫ
 //  1. console.firebase.google.com → Жаңа жоба жасаңыз
@@ -8,7 +5,7 @@ import { getDatabase } from "firebase/database";
 //  3. Төмендегі мәндерді ауыстырыңыз
 //  4. Realtime Database → Create → Test mode (30 күн)
 // ═══════════════════════════════════════════════════════════════
-const FIREBASE_CONFIG = {
+export const FIREBASE_CONFIG = {
   apiKey:            "PASTE_YOUR_API_KEY",
   authDomain:        "PASTE_YOUR_PROJECT.firebaseapp.com",
   databaseURL:       "https://PASTE_YOUR_PROJECT-default-rtdb.firebaseio.com",
@@ -21,11 +18,29 @@ const FIREBASE_CONFIG = {
 export const FIREBASE_READY =
   FIREBASE_CONFIG.apiKey !== "PASTE_YOUR_API_KEY";
 
-let db = null;
+// db and firebase functions are loaded dynamically in TechCupChat
+export let db = null;
+export let fbRef = null;
+export let fbPush = null;
+export let fbOnValue = null;
+export let fbQuery = null;
+export let fbLimitToLast = null;
 
-if (FIREBASE_READY) {
-  const app = initializeApp(FIREBASE_CONFIG);
-  db = getDatabase(app);
+export async function initFirebase() {
+  if (!FIREBASE_READY) return false;
+  try {
+    const { initializeApp } = await import("firebase/app");
+    const { getDatabase, ref, push, onValue, query, limitToLast } =
+      await import("firebase/database");
+    const app = initializeApp(FIREBASE_CONFIG);
+    db            = getDatabase(app);
+    fbRef         = ref;
+    fbPush        = push;
+    fbOnValue     = onValue;
+    fbQuery       = query;
+    fbLimitToLast = limitToLast;
+    return true;
+  } catch {
+    return false;
+  }
 }
-
-export { db };

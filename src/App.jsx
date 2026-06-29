@@ -3,8 +3,8 @@ import { motion, AnimatePresence, useMotionValue, useTransform, useSpring, useSc
 import { ExternalLink, ChevronDown, Pause, Play, RotateCcw, Eye, X, Send, MessageCircle } from "lucide-react";
 import Lenis from "lenis";
 import { useT, useLang } from "./i18n.jsx";
-import { db, FIREBASE_READY } from "./firebase.js";
-import { ref, push, onValue, query, limitToLast, serverTimestamp } from "firebase/database";
+import { FIREBASE_READY, initFirebase } from "./firebase.js";
+import * as FB from "./firebase.js";
 
 // ── SCROLL PROGRESS ───────────────────────────────────────────────────
 function ScrollProgress() {
@@ -2104,26 +2104,32 @@ function TechCupChat() {
   const [text, setText]   = useState("");
   const [name, setName]   = useState(() => localStorage.getItem("__tc_name") || "");
   const [sending, setSending] = useState(false);
+  const [ready, setReady] = useState(false);
   const bottomRef = useRef(null);
 
   useEffect(() => {
     if (!FIREBASE_READY) return;
-    const q = query(ref(db, CHAT_PATH), limitToLast(100));
-    const off = onValue(q, snap => {
-      const list = [];
-      snap.forEach(c => list.push({ id: c.key, ...c.val() }));
-      setMsgs(list);
-      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 60);
+    let off;
+    initFirebase().then(ok => {
+      if (!ok) return;
+      setReady(true);
+      const q = FB.fbQuery(FB.fbRef(FB.db, CHAT_PATH), FB.fbLimitToLast(100));
+      off = FB.fbOnValue(q, snap => {
+        const list = [];
+        snap.forEach(c => list.push({ id: c.key, ...c.val() }));
+        setMsgs(list);
+        setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 60);
+      });
     });
-    return () => off();
+    return () => off?.();
   }, []);
 
   const saveName = v => { setName(v); localStorage.setItem("__tc_name", v); };
 
   const send = async () => {
-    if (!text.trim() || !FIREBASE_READY) return;
+    if (!text.trim() || !ready) return;
     setSending(true);
-    await push(ref(db, CHAT_PATH), {
+    await FB.fbPush(FB.fbRef(FB.db, CHAT_PATH), {
       name: name.trim() || "Қонақ",
       text: text.trim(),
       ts: Date.now(),
@@ -2142,6 +2148,12 @@ function TechCupChat() {
         <b>firebase.js</b> файлында Firebase конфигурациясын толтырыңыз.<br/>
         console.firebase.google.com → Жаңа жоба → Realtime Database → Test mode
       </p>
+    </div>
+  );
+
+  if (!ready) return (
+    <div className="tc-chat-setup">
+      <span className="ts-spinner ts-spinner--lg"/>
     </div>
   );
 
