@@ -1650,180 +1650,138 @@ function TimelineItem({ item, i }) {
   );
 }
 
-// ── SITE STATS ────────────────────────────────────────────────────────
+// ── LIVE VISITORS PANEL ───────────────────────────────────────────────
 const STAT_NS = "alemx33655-site";
-const VISIT_KEY = "__al_history";
-const SEED_KEY  = "__al_seeded";
 
-// Seed data — realistic KZ visitors (offsets in ms from now)
-const SEED_DATA = [
-  { ip:"94.158.47.███",  city:"Алматы",   flag:"🇰🇿", ua:"Android · Chrome",  dt: 3*60e3 },
-  { ip:"178.91.22.███",  city:"Ақтау",    flag:"🇰🇿", ua:"iPhone · Safari",   dt: 11*60e3 },
-  { ip:"95.56.131.███",  city:"Астана",   flag:"🇰🇿", ua:"Windows · Chrome",  dt: 19*60e3 },
-  { ip:"77.232.55.███",  city:"Алматы",   flag:"🇰🇿", ua:"Samsung · Chrome",  dt: 34*60e3 },
-  { ip:"213.134.18.███", city:"Шымкент",  flag:"🇰🇿", ua:"Android · Chrome",  dt: 51*60e3 },
-  { ip:"89.218.4.███",   city:"Қарағанды",flag:"🇰🇿", ua:"iPhone · Safari",   dt: 1.2*3600e3 },
-  { ip:"217.197.11.███", city:"Алматы",   flag:"🇰🇿", ua:"Android · Chrome",  dt: 1.5*3600e3 },
-  { ip:"185.99.14.███",  city:"Ақтау",    flag:"🇰🇿", ua:"Windows · Edge",    dt: 1.9*3600e3 },
-  { ip:"94.158.45.███",  city:"Атырау",   flag:"🇰🇿", ua:"Android · Chrome",  dt: 2.3*3600e3 },
-  { ip:"178.91.18.███",  city:"Астана",   flag:"🇰🇿", ua:"iPad · Safari",     dt: 2.8*3600e3 },
-  { ip:"95.56.140.███",  city:"Алматы",   flag:"🇰🇿", ua:"Samsung · Chrome",  dt: 3.1*3600e3 },
-  { ip:"46.227.25.███",  city:"Шымкент",  flag:"🇰🇿", ua:"Android · Chrome",  dt: 3.7*3600e3 },
-  { ip:"217.197.9.███",  city:"Ақтөбе",   flag:"🇰🇿", ua:"iPhone · Safari",   dt: 4.2*3600e3 },
-  { ip:"89.218.7.███",   city:"Алматы",   flag:"🇰🇿", ua:"Windows · Chrome",  dt: 4.9*3600e3 },
-  { ip:"185.99.17.███",  city:"Ақтау",    flag:"🇰🇿", ua:"Android · Chrome",  dt: 5.5*3600e3 },
-  { ip:"77.232.62.███",  city:"Астана",   flag:"🇰🇿", ua:"iPhone · Chrome",   dt: 6.1*3600e3 },
-  { ip:"94.158.51.███",  city:"Алматы",   flag:"🇰🇿", ua:"Android · Chrome",  dt: 7.0*3600e3 },
-  { ip:"46.227.29.███",  city:"Тараз",    flag:"🇰🇿", ua:"Samsung · Chrome",  dt: 8.2*3600e3 },
-  { ip:"178.91.30.███",  city:"Ақтау",    flag:"🇰🇿", ua:"iPhone · Safari",   dt: 9.4*3600e3 },
-  { ip:"213.134.22.███", city:"Алматы",   flag:"🇰🇿", ua:"Windows · Chrome",  dt:10.8*3600e3 },
-  { ip:"95.56.128.███",  city:"Астана",   flag:"🇰🇿", ua:"Android · Chrome",  dt:12.1*3600e3 },
-  { ip:"89.218.10.███",  city:"Шымкент",  flag:"🇰🇿", ua:"iPhone · Safari",   dt:14.0*3600e3 },
-  { ip:"217.197.5.███",  city:"Алматы",   flag:"🇰🇿", ua:"Android · Chrome",  dt:16.5*3600e3 },
-  { ip:"185.99.21.███",  city:"Орал",     flag:"🇰🇿", ua:"Samsung · Chrome",  dt:19.0*3600e3 },
-  { ip:"94.158.53.███",  city:"Ақтау",    flag:"🇰🇿", ua:"iPhone · Safari",   dt:22.0*3600e3 },
-  { ip:"77.232.70.███",  city:"Астана",   flag:"🇰🇿", ua:"Windows · Chrome",  dt:26.0*3600e3 },
-  { ip:"46.227.33.███",  city:"Алматы",   flag:"🇰🇿", ua:"Android · Chrome",  dt:30.0*3600e3 },
-  { ip:"178.91.38.███",  city:"Қарағанды",flag:"🇰🇿", ua:"iPhone · Safari",   dt:34.0*3600e3 },
-  { ip:"213.134.28.███", city:"Алматы",   flag:"🇰🇿", ua:"Android · Chrome",  dt:38.0*3600e3 },
-  { ip:"95.56.135.███",  city:"Ақтөбе",   flag:"🇰🇿", ua:"Samsung · Chrome",  dt:42.0*3600e3 },
-];
+const SESSION_ID = (() => {
+  const k = "__sid";
+  let id = sessionStorage.getItem(k);
+  if (!id) { id = Math.random().toString(36).slice(2) + Date.now().toString(36); sessionStorage.setItem(k, id); }
+  return id;
+})();
+
+function detectDevice() {
+  const ua = navigator.userAgent;
+  if (/iPhone/i.test(ua)) return "iPhone";
+  if (/iPad/i.test(ua)) return "iPad";
+  if (/Samsung/i.test(ua)) return "Samsung";
+  if (/Android/i.test(ua)) return "Android";
+  if (/Windows/i.test(ua)) return "Windows";
+  if (/Macintosh/i.test(ua)) return "Mac";
+  return "Браузер";
+}
+
+function maskIP(ip) {
+  if (!ip) return "•••.•••.•••.•••";
+  const p = ip.split(".");
+  return p.length === 4 ? `${p[0]}.${p[1]}.•••.•••` : ip;
+}
 
 function fmtAgo(ms) {
   const s = Math.round(ms / 1000);
-  if (s < 60)   return `${s} сек бұрын`;
-  if (s < 3600) return `${Math.round(s/60)} мин бұрын`;
+  if (s < 5)    return "қазір";
+  if (s < 60)   return `${s} сек`;
+  if (s < 3600) return `${Math.round(s/60)} мин`;
   const h = Math.round(s/3600);
-  if (h < 24)   return `${h} сағ бұрын`;
-  return `${Math.round(h/24)} күн бұрын`;
+  if (h < 24)   return `${h} сағ`;
+  return `${Math.round(h/24)} күн`;
 }
 
-function initVisitHistory() {
-  if (localStorage.getItem(SEED_KEY)) return;
-  const now = Date.now();
-  const seeded = SEED_DATA.map(v => ({ ...v, ts: now - v.dt }));
-  localStorage.setItem(VISIT_KEY, JSON.stringify(seeded));
-  localStorage.setItem(SEED_KEY, "1");
-}
-
-function addVisitRecord(ipData) {
-  if (!ipData) return;
-  const stored = JSON.parse(localStorage.getItem(VISIT_KEY) || "[]");
-  stored.unshift({
-    ip: ipData.ipAddress,
-    city: ipData.cityName || ipData.countryName || "—",
-    flag: "🇰🇿",
-    ua: "Сіз (қазір)",
-    ts: Date.now(),
-  });
-  localStorage.setItem(VISIT_KEY, JSON.stringify(stored.slice(0, 200)));
-}
-
-function getVisitHistory() {
-  return JSON.parse(localStorage.getItem(VISIT_KEY) || "[]")
-    .sort((a, b) => b.ts - a.ts);
-}
-
-function useSiteStats() {
-  const [visits, setVisits] = useState(null);
-  const [online, setOnline] = useState(null);
-  const [visitorIP, setVisitorIP] = useState(null);
+function LivePanel() {
+  const [visitors, setVisitors]     = useState([]);
+  const [totalVisits, setTotalVisits] = useState(null);
+  const [tick, setTick]             = useState(0);
 
   useEffect(() => {
-    initVisitHistory();
-
+    // Total visits counter (real)
     fetch(`https://api.counterapi.dev/v1/${STAT_NS}/visits/up`)
-      .then(r => r.json()).then(d => setVisits(d.count)).catch(() => {});
+      .then(r => r.json()).then(d => setTotalVisits(d.count)).catch(() => {});
 
-    if (!sessionStorage.getItem("__al_online")) {
-      sessionStorage.setItem("__al_online", "1");
-      fetch(`https://api.counterapi.dev/v1/${STAT_NS}/online/up`)
-        .then(r => r.json()).then(d => setOnline(d.count)).catch(() => {});
-      window.addEventListener("beforeunload", () => {
-        fetch(`https://api.counterapi.dev/v1/${STAT_NS}/online/down`, { keepalive: true });
+    // Tick every 15s so "X сек" times stay fresh
+    const tickIv = setInterval(() => setTick(t => t + 1), 15_000);
+
+    if (!FIREBASE_READY) return () => clearInterval(tickIv);
+
+    const cleanups = [];
+
+    initFirebase().then(ok => {
+      if (!ok) return;
+
+      const presRef = FB.fbRef(FB.db, `presence/${SESSION_ID}`);
+
+      // Register self (with or without IP)
+      const register = (ip, city) => {
+        const entry = { ip, city, flag: "🇰🇿", device: detectDevice(), ts: Date.now() };
+        FB.fbSet(presRef, entry);
+        FB.fbOnDisconnect(presRef).remove();
+      };
+
+      fetch("https://freeipapi.com/api/json")
+        .then(r => r.json())
+        .then(d => register(maskIP(d.ipAddress), d.cityName || d.countryName || "—"))
+        .catch(() => register("•••.•••.•••.•••", "—"));
+
+      // Listen to ALL online users in real-time
+      const off = FB.fbOnValue(FB.fbRef(FB.db, "presence"), snap => {
+        const list = [];
+        snap.forEach(c => list.push({ _id: c.key, ...c.val() }));
+        setVisitors(list.sort((a, b) => b.ts - a.ts));
       });
-    } else {
-      fetch(`https://api.counterapi.dev/v1/${STAT_NS}/online/get`)
-        .then(r => r.json()).then(d => setOnline(d.count)).catch(() => {});
-    }
+      cleanups.push(off);
+    });
 
-    fetch("https://freeipapi.com/api/json")
-      .then(r => r.json())
-      .then(d => { setVisitorIP(d); addVisitRecord(d); })
-      .catch(() => {});
-
-    const iv = setInterval(() => {
-      fetch(`https://api.counterapi.dev/v1/${STAT_NS}/online/get`)
-        .then(r => r.json()).then(d => setOnline(d.count)).catch(() => {});
-    }, 60_000);
-
-    return () => clearInterval(iv);
+    return () => { clearInterval(tickIv); cleanups.forEach(fn => fn?.()); };
   }, []);
 
-  return { visits, online, visitorIP };
-}
-
-function StatsPopup({ onClose }) {
-  const [history, setHistory] = useState(() => getVisitHistory());
   const now = Date.now();
-  return (
-    <motion.div
-      className="stats-popup"
-      initial={{opacity:0,y:10,scale:0.97}} animate={{opacity:1,y:0,scale:1}}
-      exit={{opacity:0,y:6,scale:0.97}} transition={{duration:0.22}}
-    >
-      <div className="stats-popup__hdr">
-        <span className="stats-popup__title">Кіру тарихы · {history.length} жазба</span>
-        <button className="stats-popup__close" onClick={onClose}><X size={14}/></button>
-      </div>
-      <div className="stats-popup__list">
-        {history.map((v, i) => (
-          <div key={i} className={`stats-popup__row${i === 0 && (now - v.ts) < 3*60e3 ? " stats-popup__row--live" : ""}`}>
-            {i === 0 && (now - v.ts) < 3*60e3 && (
-              <span className="stats-popup__badge">● ТІК ЭФИР</span>
-            )}
-            <span className="stats-popup__flag">{v.flag}</span>
-            <span className="stats-popup__ip">{v.ip}</span>
-            <span className="stats-popup__city">{v.city}</span>
-            <span className="stats-popup__ua">{v.ua}</span>
-            <span className="stats-popup__ago">{fmtAgo(now - v.ts)}</span>
-          </div>
-        ))}
-      </div>
-    </motion.div>
-  );
-}
 
-function SiteStats() {
-  const { visits, online, visitorIP } = useSiteStats();
-  const [open, setOpen] = useState(false);
   return (
-    <div className="site-stats-wrap">
-      <AnimatePresence>
-        {open && <StatsPopup key="popup" onClose={() => setOpen(false)} />}
-      </AnimatePresence>
-      <motion.div
-        className="site-stats"
-        role="button" tabIndex={0}
-        onClick={() => setOpen(o => !o)}
-        onKeyDown={e => e.key === "Enter" && setOpen(o => !o)}
-        initial={{opacity:0,y:8}} whileInView={{opacity:1,y:0}}
-        viewport={{once:true}} transition={{duration:0.5,delay:0.1}}
-        title="Толық статистиканы ашу"
-      >
-        <div className="stat-chip">
-          <span className="stat-dot stat-dot--green" />
-          <span className="stat-label">Онлайн</span>
-          <span className="stat-val">{online ?? "—"}</span>
+    <motion.div className="live-panel"
+      initial={{opacity:0,y:20}} whileInView={{opacity:1,y:0}}
+      viewport={{once:true}} transition={{duration:0.5}}>
+
+      {/* Header */}
+      <div className="live-panel__hdr">
+        <div className="live-panel__hdr-left">
+          <span className="live-panel__dot-pulse"/>
+          <span className="live-panel__title">
+            {FIREBASE_READY ? visitors.length : "—"} адам онлайн
+          </span>
         </div>
-        <div className="stat-sep" />
-        <div className="stat-chip">
-          <Eye size={11} />
-          <span className="stat-label">Барлық визит</span>
-          <span className="stat-val">{visits != null ? visits.toLocaleString("ru") : "—"}</span>
+        <div className="live-panel__hdr-right">
+          <Eye size={13}/>
+          <span>{totalVisits != null ? totalVisits.toLocaleString("ru") : "…"} барлық визит</span>
         </div>
-      </motion.div>
-    </div>
+      </div>
+
+      {/* Body */}
+      {!FIREBASE_READY ? (
+        <div className="live-panel__note">
+          Firebase конфигурациясын <b>src/firebase.js</b> файлына қойыңыз — нақты онлайн қосылады
+        </div>
+      ) : visitors.length === 0 ? (
+        <div className="live-panel__note">Жүктелуде…</div>
+      ) : (
+        <div className="live-panel__list">
+          <AnimatePresence initial={false}>
+            {visitors.map((v, i) => (
+              <motion.div key={v._id}
+                className={`live-panel__row${v._id === SESSION_ID ? " live-panel__row--me" : ""}`}
+                initial={{opacity:0,y:-8}} animate={{opacity:1,y:0}}
+                exit={{opacity:0,height:0,marginBottom:0}} transition={{duration:0.25}}
+              >
+                <span className="live-panel__flag">🇰🇿</span>
+                <span className="live-panel__ip">{v.ip}</span>
+                <span className="live-panel__city">{v.city}</span>
+                <span className="live-panel__device">{v.device}</span>
+                <span className="live-panel__ago">{fmtAgo(now - v.ts)}</span>
+                {v._id === SESSION_ID && <span className="live-panel__you">← сіз</span>}
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
+      )}
+    </motion.div>
   );
 }
 
@@ -1844,7 +1802,7 @@ function Footer() {
             </a>
           ))}
         </motion.div>
-        <SiteStats />
+        <LivePanel />
         <motion.div className="footer-bottom" initial={{opacity:0}} whileInView={{opacity:1}} viewport={{once:true}} transition={{duration:0.5,delay:0.14}}>
           <div className="footer-divider"/>
           <p className="footer-copy">{t("footer.copy")}</p>
@@ -2047,7 +2005,7 @@ function TechCupComingSoon({ label, t }) {
 
 // ── COUNTDOWN ────────────────────────────────────────────────────────
 // ↓↓ ТУРНИР КҮНІН ОСЫНДА ӨЗГЕРТІҢІЗ ↓↓
-const TC_EVENT_DATE = new Date("2026-07-14T09:00:00+05:00");
+const TC_EVENT_DATE = new Date("2026-06-30T08:00:00+05:00");
 
 function useCountdown(target) {
   const [delta, setDelta] = useState(() => target - Date.now());
@@ -2078,16 +2036,18 @@ function Countdown() {
       <div className="tc-countdown__label">Tech Cup дейін</div>
       <div className="tc-countdown__nums">
         {units.map(({v,l},i) => (
-          <div key={l} className="tc-countdown__unit">
-            <AnimatePresence mode="popLayout">
-              <motion.span
-                key={v}
-                className="tc-countdown__n"
-                initial={{y:-14,opacity:0}} animate={{y:0,opacity:1}} exit={{y:14,opacity:0}}
-                transition={{duration:0.18}}
-              >{String(v).padStart(2,"0")}</motion.span>
-            </AnimatePresence>
-            <span className="tc-countdown__l">{l}</span>
+          <div key={l} className="tc-countdown__cell">
+            <div className="tc-countdown__unit">
+              <AnimatePresence mode="popLayout">
+                <motion.span
+                  key={v}
+                  className="tc-countdown__n"
+                  initial={{y:-14,opacity:0}} animate={{y:0,opacity:1}} exit={{y:14,opacity:0}}
+                  transition={{duration:0.18}}
+                >{String(v).padStart(2,"0")}</motion.span>
+              </AnimatePresence>
+              <span className="tc-countdown__l">{l}</span>
+            </div>
             {i < 3 && <span className="tc-countdown__sep">:</span>}
           </div>
         ))}
