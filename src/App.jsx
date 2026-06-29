@@ -2202,8 +2202,8 @@ export default function App() {
       wheelMultiplier: 0.85,
     });
     lenisRef.current = lenis;
-    // if page opened via direct URL, stop immediately
-    if (getPathPage()) lenis.stop();
+    // if page opened via direct URL, keep lenis running — data-lenis-prevent
+    // on the overlay handles scroll isolation without setting overflow:clip on html
     lenis.on("scroll", ({ scroll }) => scrollY.set(scroll));
     let rafId;
     const raf = ts => { lenis.raf(ts); rafId = requestAnimationFrame(raf); };
@@ -2211,11 +2211,13 @@ export default function App() {
     return () => { cancelAnimationFrame(rafId); lenis.destroy(); lenisRef.current = null; };
   }, [scrollY]);
 
-  // Stop/resume Lenis when sub-page opens/closes
+  // Resume Lenis when sub-page closes; when open, data-lenis-prevent on the
+  // overlay prevents Lenis from swallowing wheel events (lenis.stop() would set
+  // overflow:clip on <html> which blocks scroll inside the fixed sub-page).
   useEffect(() => {
     const l = lenisRef.current;
     if (!l) return;
-    pageView ? l.stop() : l.start();
+    if (!pageView) l.start();
   }, [pageView]);
 
   // URL navigation
@@ -2292,6 +2294,7 @@ export default function App() {
           <motion.div
             key={pageView}
             className="sub-page-wrap"
+            data-lenis-prevent
             initial={{ x: "100vw" }}
             animate={{ x: 0 }}
             exit={{ x: "100vw" }}
