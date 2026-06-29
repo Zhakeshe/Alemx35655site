@@ -1,8 +1,10 @@
 ﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence, useMotionValue, useTransform, useSpring, useScroll } from "framer-motion";
-import { ExternalLink, ChevronDown, Pause, Play, RotateCcw, Eye, X } from "lucide-react";
+import { ExternalLink, ChevronDown, Pause, Play, RotateCcw, Eye, X, Send, MessageCircle } from "lucide-react";
 import Lenis from "lenis";
 import { useT, useLang } from "./i18n.jsx";
+import { db, FIREBASE_READY } from "./firebase.js";
+import { ref, push, onValue, query, limitToLast, serverTimestamp } from "firebase/database";
 
 // ── SCROLL PROGRESS ───────────────────────────────────────────────────
 function ScrollProgress() {
@@ -1918,6 +1920,7 @@ const TC_TABS = [
   { key: "search" },
   { key: "live" },
   { key: "fll" },
+  { key: "chat", label: "💬 Чат" },
 ];
 
 // YouTube stream URLs — replace with actual links when ready
@@ -1990,19 +1993,21 @@ function TechCupPage({ onClose }) {
         </a>
       </div>
 
+      <Countdown />
+
       <div className="tc-tabs">
         {TC_TABS.map(tb => (
           <button
             key={tb.key}
-            className={`tc-tab${tab === tb.key ? " tc-tab--on" : ""}`}
+            className={`tc-tab${tab === tb.key ? " tc-tab--on" : ""}${tb.key === "chat" ? " tc-tab--chat" : ""}`}
             onClick={() => setTab(tb.key)}
           >
-            {t(`tc.tab.${tb.key}`)}
+            {tb.label ?? t(`tc.tab.${tb.key}`)}
           </button>
         ))}
       </div>
 
-      <div className="sub-page__body">
+      <div className={`sub-page__body${tab === "chat" ? " sub-page__body--chat" : ""}`}>
         <AnimatePresence mode="wait">
           <motion.div
             key={tab}
@@ -2010,8 +2015,11 @@ function TechCupPage({ onClose }) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.26 }}
+            style={tab === "chat" ? { height: "100%" } : {}}
           >
-            {tab === "search"
+            {tab === "chat"
+              ? <TechCupChat />
+              : tab === "search"
               ? <TechCupSearch t={t} />
               : tab === "live"
               ? <TechCupEmbed title="Live FTC" url={TC_LIVE_URL} t={t} />
@@ -2036,6 +2044,164 @@ function TechCupComingSoon({ label, t }) {
     </div>
   );
 }
+
+// ── COUNTDOWN ────────────────────────────────────────────────────────
+// ↓↓ ТУРНИР КҮНІН ОСЫНДА ӨЗГЕРТІҢІЗ ↓↓
+const TC_EVENT_DATE = new Date("2026-07-14T09:00:00+05:00");
+
+function useCountdown(target) {
+  const [delta, setDelta] = useState(() => target - Date.now());
+  useEffect(() => {
+    const iv = setInterval(() => setDelta(target - Date.now()), 1000);
+    return () => clearInterval(iv);
+  }, [target]);
+  return Math.max(0, delta);
+}
+
+function Countdown() {
+  const delta = useCountdown(TC_EVENT_DATE.getTime());
+  const units = [
+    { v: Math.floor(delta / 86400e3),               l: "күн"  },
+    { v: Math.floor((delta % 86400e3) / 3600e3),    l: "сағ"  },
+    { v: Math.floor((delta % 3600e3) / 60e3),       l: "мин"  },
+    { v: Math.floor((delta % 60e3) / 1000),         l: "сек"  },
+  ];
+  if (delta === 0) return (
+    <div className="tc-live-now">
+      <span className="tc-live-dot"/>
+      <span>ТУРНИР ЖҮРІП ЖАТЫР</span>
+    </div>
+  );
+  return (
+    <motion.div className="tc-countdown"
+      initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} transition={{duration:0.4}}>
+      <div className="tc-countdown__label">Tech Cup дейін</div>
+      <div className="tc-countdown__nums">
+        {units.map(({v,l},i) => (
+          <div key={l} className="tc-countdown__unit">
+            <AnimatePresence mode="popLayout">
+              <motion.span
+                key={v}
+                className="tc-countdown__n"
+                initial={{y:-14,opacity:0}} animate={{y:0,opacity:1}} exit={{y:14,opacity:0}}
+                transition={{duration:0.18}}
+              >{String(v).padStart(2,"0")}</motion.span>
+            </AnimatePresence>
+            <span className="tc-countdown__l">{l}</span>
+            {i < 3 && <span className="tc-countdown__sep">:</span>}
+          </div>
+        ))}
+      </div>
+    </motion.div>
+  );
+}
+
+// ── TECH CUP CHAT ────────────────────────────────────────────────────
+const CHAT_PATH = "techcup-chat-2026";
+
+function TechCupChat() {
+  const [msgs, setMsgs]   = useState([]);
+  const [text, setText]   = useState("");
+  const [name, setName]   = useState(() => localStorage.getItem("__tc_name") || "");
+  const [sending, setSending] = useState(false);
+  const bottomRef = useRef(null);
+
+  useEffect(() => {
+    if (!FIREBASE_READY) return;
+    const q = query(ref(db, CHAT_PATH), limitToLast(100));
+    const off = onValue(q, snap => {
+      const list = [];
+      snap.forEach(c => list.push({ id: c.key, ...c.val() }));
+      setMsgs(list);
+      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 60);
+    });
+    return () => off();
+  }, []);
+
+  const saveName = v => { setName(v); localStorage.setItem("__tc_name", v); };
+
+  const send = async () => {
+    if (!text.trim() || !FIREBASE_READY) return;
+    setSending(true);
+    await push(ref(db, CHAT_PATH), {
+      name: name.trim() || "Қонақ",
+      text: text.trim(),
+      ts: Date.now(),
+    });
+    setText("");
+    setSending(false);
+  };
+
+  const onKey = e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } };
+
+  if (!FIREBASE_READY) return (
+    <div className="tc-chat-setup">
+      <MessageCircle size={28} className="tc-chat-setup__icon"/>
+      <h3>Чатты іске қосу керек</h3>
+      <p>
+        <b>firebase.js</b> файлында Firebase конфигурациясын толтырыңыз.<br/>
+        console.firebase.google.com → Жаңа жоба → Realtime Database → Test mode
+      </p>
+    </div>
+  );
+
+  return (
+    <div className="tc-chat">
+      <div className="tc-chat__msgs">
+        {msgs.length === 0 && (
+          <div className="tc-chat__empty">Алғашқы хабарламаны жіберіңіз!</div>
+        )}
+        {msgs.map((m, i) => {
+          const isNew = Date.now() - m.ts < 5000;
+          return (
+            <motion.div
+              key={m.id}
+              className="tc-chat__bubble"
+              initial={isNew ? {opacity:0,y:10} : false}
+              animate={{opacity:1,y:0}}
+              transition={{duration:0.22}}
+            >
+              <div className="tc-chat__meta">
+                <span className="tc-chat__author">{m.name}</span>
+                <span className="tc-chat__time">{fmtAgo(Date.now() - m.ts)}</span>
+              </div>
+              <div className="tc-chat__text">{m.text}</div>
+            </motion.div>
+          );
+        })}
+        <div ref={bottomRef}/>
+      </div>
+
+      <div className="tc-chat__composer">
+        <input
+          className="tc-chat__name-in"
+          placeholder="Атыңыз (міндетті емес)"
+          value={name}
+          onChange={e => saveName(e.target.value)}
+          maxLength={24}
+        />
+        <div className="tc-chat__row">
+          <input
+            className="tc-chat__msg-in"
+            placeholder="Хабарлама жазыңыз…"
+            value={text}
+            onChange={e => setText(e.target.value)}
+            onKeyDown={onKey}
+            maxLength={300}
+          />
+          <button
+            className={`tc-chat__send${sending ? " tc-chat__send--busy" : ""}`}
+            onClick={send}
+            disabled={sending || !text.trim()}
+          >
+            <Send size={16}/>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── URL helpers ───────────────────────────────────────────────────────
 const getPathPage = () => {
   const p = window.location.pathname.replace(/\/+$/, "");
