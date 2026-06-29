@@ -6,13 +6,13 @@
 //  4. Build → Realtime Database → Create → Test mode
 // ═══════════════════════════════════════════════════════════════
 export const FIREBASE_CONFIG = {
-  apiKey:            "PASTE_YOUR_API_KEY",
-  authDomain:        "PASTE_YOUR_PROJECT.firebaseapp.com",
-  databaseURL:       "https://PASTE_YOUR_PROJECT-default-rtdb.firebaseio.com",
-  projectId:         "PASTE_YOUR_PROJECT",
-  storageBucket:     "PASTE_YOUR_PROJECT.appspot.com",
-  messagingSenderId: "PASTE_YOUR_SENDER_ID",
-  appId:             "PASTE_YOUR_APP_ID",
+  apiKey:            "AIzaSyBqGKRwfRg_gkBfRom-1TZ9PwetwvpWglY",
+  authDomain:        "alemx-30a66.firebaseapp.com",
+  databaseURL:       "https://alemx-30a66-default-rtdb.firebaseio.com",
+  projectId:         "alemx-30a66",
+  storageBucket:     "alemx-30a66.firebasestorage.app",
+  messagingSenderId: "771279273328",
+  appId:             "1:771279273328:web:f87ba8e48b73cca54c63b5",
 };
 
 export const FIREBASE_READY =
