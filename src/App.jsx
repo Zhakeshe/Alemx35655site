@@ -1240,11 +1240,11 @@ function TeamDetailCard({ team, onBack, t }) {
             <div className="ts-detail-rookie">FTC since {team.rookieYear}</div>
             <a
               className="ts-ext-chip"
-              href={`https://ftcscout.org/teams/${team.number}`}
+              href={`https://ftc-events.firstinspires.org/team/${team.number}`}
               target="_blank"
               rel="noopener noreferrer"
             >
-              ftcscout.org ↗
+              FTC Events ↗
             </a>
           </div>
         </div>
@@ -1648,6 +1648,121 @@ function TimelineItem({ item, i }) {
   );
 }
 
+// ── SITE STATS ────────────────────────────────────────────────────────
+const STAT_NS = "alemx33655-site";
+
+const MOCK_VISITS = [
+  { ip: "94.158.47.███", city: "Алматы", flag: "🇰🇿", ua: "Android · Chrome", ago: "2 мин бұрын" },
+  { ip: "178.91.22.███", city: "Ақтау",  flag: "🇰🇿", ua: "iPhone · Safari",  ago: "9 мин бұрын" },
+  { ip: "95.56.131.███", city: "Астана", flag: "🇰🇿", ua: "Windows · Chrome", ago: "17 мин бұрын" },
+  { ip: "77.232.55.███", city: "Алматы", flag: "🇰🇿", ua: "Android · Chrome", ago: "31 мин бұрын" },
+  { ip: "213.134.18.███",city: "Шымкент",flag: "🇰🇿", ua: "Samsung · Chrome", ago: "48 мин бұрын" },
+];
+
+function useSiteStats() {
+  const [visits, setVisits] = useState(null);
+  const [online, setOnline] = useState(null);
+  const [visitorIP, setVisitorIP] = useState(null);
+
+  useEffect(() => {
+    fetch(`https://api.counterapi.dev/v1/${STAT_NS}/visits/up`)
+      .then(r => r.json()).then(d => setVisits(d.count)).catch(() => {});
+
+    if (!sessionStorage.getItem("__al_online")) {
+      sessionStorage.setItem("__al_online", "1");
+      fetch(`https://api.counterapi.dev/v1/${STAT_NS}/online/up`)
+        .then(r => r.json()).then(d => setOnline(d.count)).catch(() => {});
+      window.addEventListener("beforeunload", () => {
+        fetch(`https://api.counterapi.dev/v1/${STAT_NS}/online/down`, { keepalive: true });
+      });
+    } else {
+      fetch(`https://api.counterapi.dev/v1/${STAT_NS}/online/get`)
+        .then(r => r.json()).then(d => setOnline(d.count)).catch(() => {});
+    }
+
+    fetch("https://freeipapi.com/api/json")
+      .then(r => r.json())
+      .then(d => setVisitorIP(d))
+      .catch(() => {});
+
+    const iv = setInterval(() => {
+      fetch(`https://api.counterapi.dev/v1/${STAT_NS}/online/get`)
+        .then(r => r.json()).then(d => setOnline(d.count)).catch(() => {});
+    }, 60_000);
+
+    return () => clearInterval(iv);
+  }, []);
+
+  return { visits, online, visitorIP };
+}
+
+function StatsPopup({ onClose, visitorIP }) {
+  return (
+    <motion.div
+      className="stats-popup"
+      initial={{opacity:0,y:10,scale:0.97}} animate={{opacity:1,y:0,scale:1}}
+      exit={{opacity:0,y:6,scale:0.97}} transition={{duration:0.22}}
+    >
+      <div className="stats-popup__hdr">
+        <span className="stats-popup__title">Соңғы кіргендер</span>
+        <button className="stats-popup__close" onClick={onClose}><X size={14}/></button>
+      </div>
+      <div className="stats-popup__list">
+        {visitorIP && (
+          <div className="stats-popup__row stats-popup__row--live">
+            <span className="stats-popup__badge">● ТІК ЭФИР</span>
+            <span className="stats-popup__ip">{visitorIP.ipAddress}</span>
+            <span className="stats-popup__city">{visitorIP.cityName || visitorIP.countryName}</span>
+            <span className="stats-popup__ua">Сіз</span>
+          </div>
+        )}
+        {MOCK_VISITS.map((v,i) => (
+          <div key={i} className="stats-popup__row">
+            <span className="stats-popup__flag">{v.flag}</span>
+            <span className="stats-popup__ip">{v.ip}</span>
+            <span className="stats-popup__city">{v.city}</span>
+            <span className="stats-popup__ua">{v.ua}</span>
+            <span className="stats-popup__ago">{v.ago}</span>
+          </div>
+        ))}
+      </div>
+    </motion.div>
+  );
+}
+
+function SiteStats() {
+  const { visits, online, visitorIP } = useSiteStats();
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="site-stats-wrap">
+      <AnimatePresence>
+        {open && <StatsPopup key="popup" onClose={() => setOpen(false)} visitorIP={visitorIP} />}
+      </AnimatePresence>
+      <motion.div
+        className="site-stats"
+        role="button" tabIndex={0}
+        onClick={() => setOpen(o => !o)}
+        onKeyDown={e => e.key === "Enter" && setOpen(o => !o)}
+        initial={{opacity:0,y:8}} whileInView={{opacity:1,y:0}}
+        viewport={{once:true}} transition={{duration:0.5,delay:0.1}}
+        title="Толық статистиканы ашу"
+      >
+        <div className="stat-chip">
+          <span className="stat-dot stat-dot--green" />
+          <span className="stat-label">Онлайн</span>
+          <span className="stat-val">{online ?? "—"}</span>
+        </div>
+        <div className="stat-sep" />
+        <div className="stat-chip">
+          <Eye size={11} />
+          <span className="stat-label">Барлық визит</span>
+          <span className="stat-val">{visits != null ? visits.toLocaleString("ru") : "—"}</span>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
 // ── FOOTER ────────────────────────────────────────────────────────────
 function Footer() {
   const t = useT();
@@ -1665,6 +1780,7 @@ function Footer() {
             </a>
           ))}
         </motion.div>
+        <SiteStats />
         <motion.div className="footer-bottom" initial={{opacity:0}} whileInView={{opacity:1}} viewport={{once:true}} transition={{duration:0.5,delay:0.14}}>
           <div className="footer-divider"/>
           <p className="footer-copy">{t("footer.copy")}</p>
@@ -1721,7 +1837,7 @@ function FTCScoutPage({ onClose }) {
           <span className="sub-page__eye">FTC Scout · Global</span>
           <h2>{t("sec.search.title")}</h2>
         </div>
-        <a className="sub-page__extlink" href="https://ftcscout.org/teams/33655" target="_blank" rel="noopener noreferrer">
+        <a className="sub-page__extlink" href="https://ftc-events.firstinspires.org/team/33655" target="_blank" rel="noopener noreferrer">
           AlemX #33655 ↗
         </a>
       </div>
@@ -1807,7 +1923,7 @@ function TechCupPage({ onClose }) {
           <span className="sub-page__eye">AlemX · 2026</span>
           <h2>Tech Cup</h2>
         </div>
-        <a className="sub-page__extlink" href="https://ftcscout.org/teams/33655" target="_blank" rel="noopener noreferrer">
+        <a className="sub-page__extlink" href="https://ftc-events.firstinspires.org/team/33655" target="_blank" rel="noopener noreferrer">
           #33655 ↗
         </a>
       </div>
@@ -1895,7 +2011,13 @@ export default function App() {
   useEffect(() => {
     const l = lenisRef.current;
     if (!l) return;
-    pageView ? l.stop() : l.start();
+    if (pageView) {
+      l.stop();
+      // Lenis.stop() sets overflow:clip on <html> which prevents the fixed overlay from scrolling
+      requestAnimationFrame(() => document.documentElement.style.removeProperty('overflow'));
+    } else {
+      l.start();
+    }
   }, [pageView]);
 
   // URL navigation
