@@ -468,6 +468,113 @@ function buildDistTable(pts) {
 const AUTO_POLY = buildAutoPoly();
 const AUTO_DIST = buildDistTable(AUTO_POLY);
 
+// Generic poly builder / lerper (used by PedroVisualizerGen)
+function buildPolyFor(segs) {
+  const pts = [];
+  for (let si = 0; si < segs.length; si++) {
+    const s = segs[si];
+    const sp0 = psvg(s.p0), sp2 = psvg(s.p2);
+    const sp1 = s.p1 ? psvg(s.p1) : null;
+    const h0 = s.p0.deg, h2 = s.p2.deg;
+    for (let i = (si === 0 ? 0 : 1); i <= SPP; i++) {
+      const t = i / SPP;
+      let px, py;
+      if (s.type === 'bezier' && sp1) {
+        const mt = 1 - t;
+        px = mt*mt*sp0.sx + 2*mt*t*sp1.sx + t*t*sp2.sx;
+        py = mt*mt*sp0.sy + 2*mt*t*sp1.sy + t*t*sp2.sy;
+      } else {
+        px = sp0.sx + (sp2.sx - sp0.sx) * t;
+        py = sp0.sy + (sp2.sy - sp0.sy) * t;
+      }
+      pts.push({ sx: px, sy: py, segIdx: si, hdeg: h0 + (h2 - h0) * t });
+    }
+  }
+  return pts;
+}
+
+function lerpPolyFor(poly, dist, t) {
+  const total  = dist[dist.length - 1];
+  const target = total * t;
+  let lo = 0, hi = dist.length - 1;
+  while (lo < hi - 1) { const mid = (lo + hi) >> 1; if (dist[mid] < target) lo = mid; else hi = mid; }
+  const span = dist[hi] - dist[lo];
+  const r    = span > 0 ? (target - dist[lo]) / span : 0;
+  const a    = poly[lo], b = poly[Math.min(hi, poly.length - 1)];
+  return {
+    sx: a.sx + (b.sx - a.sx) * r,
+    sy: a.sy + (b.sy - a.sy) * r,
+    svgAngle: Math.atan2(b.sy - a.sy, b.sx - a.sx) * 180 / Math.PI,
+    hdeg: a.hdeg + (b.hdeg - a.hdeg) * r,
+    segIdx: a.segIdx,
+  };
+}
+
+// ── AUTO BLUE PATH DATA ───────────────────────────────────────────────
+// Coordinates from AutoBlue.java — Blue alliance, 5 shots, 12 segments
+const PB = {
+  start:    { x: 35,    y: 134,   deg: 180 },
+  shoot:    { x: 47.15, y: 83.95, deg: 180 },
+  c1:       { x: 18,    y: 64,    deg: 180 },
+  ctrl1:    { x: 59.69, y: 61.56, deg: 180 },
+  rCtrl1:   { x: 60.57, y: 69.71, deg: 180 },
+  c2:       { x: 21,    y: 87,    deg: 180 },
+  gate:     { x: 14,    y: 66.5,  deg: 160 },
+  gateDeep: { x: 13.18, y: 57.59, deg: 180 },
+  gateCtrl: { x: 27.61, y: 58.43, deg: 180 },
+  park:     { x: 39.67, y: 58.22, deg: 180 },
+};
+const SEGS_BLUE = [
+  { type:'line',   p0:PB.start,    p2:PB.shoot,                          col:'#ffc516', state:'START' },
+  { type:'bezier', p0:PB.shoot,    p1:PB.ctrl1,    p2:PB.c1,             col:'#3b82f6', state:'COL 1' },
+  { type:'bezier', p0:PB.c1,       p1:PB.rCtrl1,   p2:PB.shoot,          col:'#60a5fa', state:'RET 1' },
+  { type:'line',   p0:PB.shoot,    p2:PB.c2,                             col:'#3b82f6', state:'COL 2' },
+  { type:'line',   p0:PB.c2,       p2:PB.shoot,                          col:'#60a5fa', state:'RET 2' },
+  { type:'line',   p0:PB.shoot,    p2:PB.gate,                           col:'#3b82f6', state:'COL 3' },
+  { type:'bezier', p0:PB.gate,     p1:PB.gateCtrl, p2:PB.gateDeep,       col:'#a78bfa', state:'GATE'  },
+  { type:'line',   p0:PB.gateDeep, p2:PB.shoot,                          col:'#60a5fa', state:'RET 3' },
+  { type:'line',   p0:PB.shoot,    p2:PB.gate,                           col:'#3b82f6', state:'COL 4' },
+  { type:'bezier', p0:PB.gate,     p1:PB.gateCtrl, p2:PB.gateDeep,       col:'#a78bfa', state:'GATE'  },
+  { type:'line',   p0:PB.gateDeep, p2:PB.shoot,                          col:'#60a5fa', state:'RET 4' },
+  { type:'line',   p0:PB.shoot,    p2:PB.park,                           col:'#1d4ed8', state:'PARK'  },
+];
+const WP_BLUE = [
+  { p: PB.start,    label:'START', col:'#ffc516' },
+  { p: PB.shoot,    label:'SHOOT', col:'#ef4444' },
+  { p: PB.c1,       label:'#1',    col:'#3b82f6' },
+  { p: PB.c2,       label:'#2',    col:'#3b82f6' },
+  { p: PB.gate,     label:'GATE',  col:'#a78bfa' },
+  { p: PB.gateDeep, label:'DEEP',  col:'#a78bfa' },
+  { p: PB.park,     label:'PARK',  col:'#1d4ed8' },
+];
+
+// ── AUTO BLUE 2 PATH DATA ─────────────────────────────────────────────
+// Coordinates from AutoBlue2.java — mirrored from Autored2, 4 shots, 8 segments
+const PB2 = {
+  start:  { x: 60.22, y: 127.4,  deg: 270 },
+  shoot:  { x: 60.22, y: 127.4,  deg: 270 },
+  ctrl1:  { x: 56.33, y: 105.46, deg: 180 },
+  c1:     { x: 16.44, y: 109.64, deg: 180 },
+  c2:     { x: 11,    y: 132,    deg: 180 },
+  park:   { x: 59.94, y: 117.92, deg: 270 },
+};
+const SEGS_B2 = [
+  { type:'bezier', p0:PB2.shoot, p1:PB2.ctrl1, p2:PB2.c1,    col:'#06b6d4', state:'COL 1' },
+  { type:'line',   p0:PB2.c1,   p2:PB2.shoot,                col:'#22d3ee', state:'RET 1' },
+  { type:'line',   p0:PB2.shoot, p2:PB2.c2,                  col:'#06b6d4', state:'COL 2' },
+  { type:'line',   p0:PB2.c2,   p2:PB2.shoot,                col:'#22d3ee', state:'RET 2' },
+  { type:'line',   p0:PB2.shoot, p2:PB2.c2,                  col:'#06b6d4', state:'COL 3' },
+  { type:'line',   p0:PB2.c2,   p2:PB2.shoot,                col:'#22d3ee', state:'RET 3' },
+  { type:'line',   p0:PB2.shoot, p2:PB2.park,                col:'#0e7490', state:'PARK'  },
+];
+const WP_B2 = [
+  { p: PB2.start, label:'START', col:'#ffc516' },
+  { p: PB2.shoot, label:'SHOOT', col:'#ef4444' },
+  { p: PB2.c1,    label:'#1',    col:'#06b6d4' },
+  { p: PB2.c2,    label:'#2',    col:'#06b6d4' },
+  { p: PB2.park,  label:'PARK',  col:'#0e7490' },
+];
+
 function lerpAutoPoly(t) {
   const total  = AUTO_DIST[AUTO_DIST.length - 1];
   const target = total * t;
@@ -1025,6 +1132,166 @@ function PedroVisualizer() {
           <div key={k} className="pstat">
             <span>{k}</span><strong>{v}</strong>
           </div>
+        ))}
+      </div>
+    </motion.div>
+  );
+}
+
+// ── PEDRO VISUALIZER (Generic) ────────────────────────────────────────
+function PedroVisualizerGen({ segs, waypoints, title, subtitle, uid, robotBorder = '#3b82f6' }) {
+  const t = useT();
+  const [running, setRunning] = useState(true);
+  const [prog, setProg]       = useState(0);
+  const progRef    = useRef(0);
+  const visibleRef = useRef(false);
+  const wrapRef    = useRef(null);
+
+  const [poly, dist] = useMemo(() => {
+    const p = buildPolyFor(segs);
+    return [p, buildDistTable(p)];
+  }, [segs]);
+
+  const bezierCtrl = useMemo(() =>
+    segs.filter(s => s.type === 'bezier' && s.p1)
+        .filter((s, i, arr) => arr.findIndex(x => x.p1 === s.p1) === i),
+    [segs]
+  );
+
+  useEffect(() => {
+    const obs = new IntersectionObserver(([e]) => { visibleRef.current = e.isIntersecting; }, { threshold: 0.05 });
+    if (wrapRef.current) obs.observe(wrapRef.current);
+    return () => obs.disconnect();
+  }, []);
+
+  useEffect(() => {
+    let raf, last = 0;
+    const tick = ts => {
+      if (running && visibleRef.current) {
+        if (last) { progRef.current = (progRef.current + (ts - last) / 18000) % 1; setProg(progRef.current); }
+        last = ts;
+      } else { last = 0; }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [running]);
+
+  const bot  = useMemo(() => lerpPolyFor(poly, dist, prog), [poly, dist, prog]);
+  const half = ROBOT_PX / 2;
+  const seg  = segs[bot?.segIdx ?? 0];
+  const inX  = bot ? (bot.sx / SZ * FIELD).toFixed(2) : "0.00";
+  const inY  = bot ? ((SZ - bot.sy) / SZ * FIELD).toFixed(2) : "0.00";
+  const hdg  = bot ? bot.hdeg.toFixed(1) : "0.0";
+  const sliderVal = Math.round(prog * 1000);
+
+  const ids = { hatch:`rH-${uid}`, clip:`rC-${uid}`, gBot:`gB-${uid}`, gLn:`gL-${uid}` };
+
+  return (
+    <motion.div ref={wrapRef} className="pedro"
+      initial={{ opacity: 0, y: 26 }} whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.1 }} transition={{ duration: 0.6 }}>
+      <div className="pedro__header">
+        <div>
+          <span className="eyebrow">Pedro Pathing</span>
+          <h3>{title}</h3>
+          <p>{subtitle}</p>
+        </div>
+        <div className="pedro__legend">
+          <span><i className="dot" style={{background: robotBorder}}/>Collect</span>
+          <span><i className="dot" style={{background:'#93c5fd'}}/>Return</span>
+          <span><i className="dot" style={{background:'#ffc516'}}/>Start</span>
+          <span><i style={{display:'inline-block',width:8,height:8,background:'rgba(255,197,22,.7)',border:'1.5px solid #ffc516',transform:'rotate(45deg)',marginRight:4}}/>Ctrl</span>
+        </div>
+      </div>
+
+      <div className="pedro__field">
+        <svg viewBox={`0 0 ${SZ} ${SZ}`} className="pedro__svg">
+          <defs>
+            <pattern id={ids.hatch} patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(45 0 0)">
+              <line x1="0" y1="0" x2="0" y2="10" stroke={robotBorder} strokeWidth="2" strokeOpacity="0.65"/>
+            </pattern>
+            <clipPath id={ids.clip}>
+              <rect x={-half} y={-half} width={ROBOT_PX} height={ROBOT_PX} rx="3"/>
+            </clipPath>
+            <filter id={ids.gBot} x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur stdDeviation="4" result="b"/>
+              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+            <filter id={ids.gLn} x="-10%" y="-10%" width="120%" height="120%">
+              <feGaussianBlur stdDeviation="2.5" result="b"/>
+              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+
+          <image href="/decode.webp" x="0" y="0" width={SZ} height={SZ}/>
+
+          {segs.map((s, i) => (
+            <g key={i}>
+              <path d={segD(s)} fill="none" stroke={s.col} strokeWidth="22" strokeOpacity="0.13" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d={segD(s)} fill="none" stroke={s.col} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" filter={`url(#${ids.gLn})`}/>
+            </g>
+          ))}
+
+          {bezierCtrl.map((s, i) => {
+            const sp0 = psvg(s.p0), sp1 = psvg(s.p1), sp2 = psvg(s.p2);
+            return (
+              <g key={`ctrl-${i}`}>
+                <line x1={sp0.sx} y1={sp0.sy} x2={sp1.sx} y2={sp1.sy} stroke="#ffc516" strokeWidth="1" strokeDasharray="4,3" strokeOpacity="0.45"/>
+                <line x1={sp2.sx} y1={sp2.sy} x2={sp1.sx} y2={sp1.sy} stroke="#ffc516" strokeWidth="1" strokeDasharray="4,3" strokeOpacity="0.45"/>
+                <rect x={sp1.sx-5} y={sp1.sy-5} width="10" height="10"
+                  fill="rgba(255,197,22,.18)" stroke="#ffc516" strokeWidth="1.5"
+                  transform={`rotate(45 ${sp1.sx} ${sp1.sy})`}/>
+              </g>
+            );
+          })}
+
+          {waypoints.map((wp, i) => {
+            const { sx: wx, sy: wy } = psvg(wp.p);
+            return (
+              <g key={i}>
+                <circle cx={wx} cy={wy} r="10" fill={wp.col} fillOpacity="0.18"/>
+                <circle cx={wx} cy={wy} r="5"  fill={wp.col}/>
+                <circle cx={wx} cy={wy} r="10" fill="none" stroke={wp.col} strokeWidth="1.5" strokeOpacity="0.6"/>
+                <text x={wx} y={wy-13} textAnchor="middle" fill="#fff" fontSize="9" fontWeight="700" fontFamily="monospace"
+                  stroke="rgba(0,0,0,0.85)" strokeWidth="3" paintOrder="stroke">{wp.label}</text>
+              </g>
+            );
+          })}
+
+          {bot && (
+            <g transform={`translate(${bot.sx},${bot.sy}) rotate(${-bot.hdeg})`} filter={`url(#${ids.gBot})`}>
+              <rect x={-half} y={-half} width={ROBOT_PX} height={ROBOT_PX} rx="3" fill={`url(#${ids.hatch})`} clipPath={`url(#${ids.clip})`}/>
+              <rect x={-half} y={-half} width={ROBOT_PX} height={ROBOT_PX} rx="3" fill="none" stroke={robotBorder} strokeWidth="3"/>
+              <circle cx="0" cy="0" r="5" fill="#ffc516"/>
+              <line x1="0" y1="0" x2={half+6} y2="0" stroke="#fff" strokeWidth="1.5" strokeOpacity="0.9"/>
+              <polygon points={`${half+6},-3.5 ${half+13},0 ${half+6},3.5`} fill="#fff" fillOpacity="0.9"/>
+            </g>
+          )}
+        </svg>
+      </div>
+
+      <div className="pedro__controls">
+        <button className="ctrl-btn" onClick={() => setRunning(v => !v)}>
+          {running ? <Pause size={14}/> : <Play size={14}/>} {running ? t("btn.pause") : t("btn.play")}
+        </button>
+        <button className="ctrl-btn" onClick={() => { progRef.current = 0; setProg(0); setRunning(true); }}>
+          <RotateCcw size={14}/> {t("btn.restart")}
+        </button>
+      </div>
+
+      <div className="pedro__scrub">
+        <span className="scrub-label">Жол</span>
+        <input type="range" min="0" max="1000" step="1" value={sliderVal}
+          className="scrub-slider" style={{ '--val': `${(prog*100).toFixed(1)}%` }}
+          onChange={e => { const v = Number(e.target.value)/1000; progRef.current=v; setProg(v); }}
+          onMouseDown={() => setRunning(false)} onTouchStart={() => setRunning(false)}/>
+        <span className="scrub-pct">{Math.round(prog*100)}%</span>
+      </div>
+
+      <div className="pedro__stats">
+        {[["X (in)", inX],["Y (in)", inY],["Heading", `${hdg}°`],["State", seg?.state ?? "—"]].map(([k,v]) => (
+          <div key={k} className="pstat"><span>{k}</span><strong>{v}</strong></div>
         ))}
       </div>
     </motion.div>
@@ -2270,6 +2537,28 @@ export default function App() {
 
         <Sec id="auto" eye={t("sec.auto.eye")} title={t("sec.auto.title")} desc={t("sec.auto.desc")}>
           <PedroVisualizer />
+        </Sec>
+
+        <Sec id="autoblue" eye={t("sec.autoblue.eye")} title={t("sec.autoblue.title")} desc={t("sec.autoblue.desc")}>
+          <PedroVisualizerGen
+            uid="blue"
+            segs={SEGS_BLUE}
+            waypoints={WP_BLUE}
+            title="AutoBlue · 5 shots"
+            subtitle="ZHORIK AUTO BLUE · 12 сегмент, Blue альянс"
+            robotBorder="#3b82f6"
+          />
+        </Sec>
+
+        <Sec id="autoblue2" eye={t("sec.autoblue2.eye")} title={t("sec.autoblue2.title")} desc={t("sec.autoblue2.desc")}>
+          <PedroVisualizerGen
+            uid="blue2"
+            segs={SEGS_B2}
+            waypoints={WP_B2}
+            title="AutoBlue2 · 4 shots"
+            subtitle="AUTO BLUE 2 · жылдам стратегия, 8 сегмент"
+            robotBorder="#06b6d4"
+          />
         </Sec>
 
         <Sec id="ranking" eye={t("sec.ranking.eye")} title={t("sec.ranking.title")} desc={t("sec.ranking.desc")}>
