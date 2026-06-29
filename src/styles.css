@@ -848,7 +848,7 @@ img { display: block; max-width: 100%; }
   padding:.15rem;display:flex;align-items:center;transition:color .15s;
 }
 .stats-popup__close:hover { color:#e879f9; }
-.stats-popup__list { padding:.4rem 0; }
+.stats-popup__list { padding:.4rem 0;max-height:340px;overflow-y:auto; }
 .stats-popup__row {
   display:flex;align-items:center;flex-wrap:wrap;gap:.25rem .55rem;
   padding:.5rem 1rem;border-bottom:1px solid rgba(168,85,247,.07);

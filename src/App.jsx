@@ -1650,14 +1650,77 @@ function TimelineItem({ item, i }) {
 
 // ── SITE STATS ────────────────────────────────────────────────────────
 const STAT_NS = "alemx33655-site";
+const VISIT_KEY = "__al_history";
+const SEED_KEY  = "__al_seeded";
 
-const MOCK_VISITS = [
-  { ip: "94.158.47.███", city: "Алматы", flag: "🇰🇿", ua: "Android · Chrome", ago: "2 мин бұрын" },
-  { ip: "178.91.22.███", city: "Ақтау",  flag: "🇰🇿", ua: "iPhone · Safari",  ago: "9 мин бұрын" },
-  { ip: "95.56.131.███", city: "Астана", flag: "🇰🇿", ua: "Windows · Chrome", ago: "17 мин бұрын" },
-  { ip: "77.232.55.███", city: "Алматы", flag: "🇰🇿", ua: "Android · Chrome", ago: "31 мин бұрын" },
-  { ip: "213.134.18.███",city: "Шымкент",flag: "🇰🇿", ua: "Samsung · Chrome", ago: "48 мин бұрын" },
+// Seed data — realistic KZ visitors (offsets in ms from now)
+const SEED_DATA = [
+  { ip:"94.158.47.███",  city:"Алматы",   flag:"🇰🇿", ua:"Android · Chrome",  dt: 3*60e3 },
+  { ip:"178.91.22.███",  city:"Ақтау",    flag:"🇰🇿", ua:"iPhone · Safari",   dt: 11*60e3 },
+  { ip:"95.56.131.███",  city:"Астана",   flag:"🇰🇿", ua:"Windows · Chrome",  dt: 19*60e3 },
+  { ip:"77.232.55.███",  city:"Алматы",   flag:"🇰🇿", ua:"Samsung · Chrome",  dt: 34*60e3 },
+  { ip:"213.134.18.███", city:"Шымкент",  flag:"🇰🇿", ua:"Android · Chrome",  dt: 51*60e3 },
+  { ip:"89.218.4.███",   city:"Қарағанды",flag:"🇰🇿", ua:"iPhone · Safari",   dt: 1.2*3600e3 },
+  { ip:"217.197.11.███", city:"Алматы",   flag:"🇰🇿", ua:"Android · Chrome",  dt: 1.5*3600e3 },
+  { ip:"185.99.14.███",  city:"Ақтау",    flag:"🇰🇿", ua:"Windows · Edge",    dt: 1.9*3600e3 },
+  { ip:"94.158.45.███",  city:"Атырау",   flag:"🇰🇿", ua:"Android · Chrome",  dt: 2.3*3600e3 },
+  { ip:"178.91.18.███",  city:"Астана",   flag:"🇰🇿", ua:"iPad · Safari",     dt: 2.8*3600e3 },
+  { ip:"95.56.140.███",  city:"Алматы",   flag:"🇰🇿", ua:"Samsung · Chrome",  dt: 3.1*3600e3 },
+  { ip:"46.227.25.███",  city:"Шымкент",  flag:"🇰🇿", ua:"Android · Chrome",  dt: 3.7*3600e3 },
+  { ip:"217.197.9.███",  city:"Ақтөбе",   flag:"🇰🇿", ua:"iPhone · Safari",   dt: 4.2*3600e3 },
+  { ip:"89.218.7.███",   city:"Алматы",   flag:"🇰🇿", ua:"Windows · Chrome",  dt: 4.9*3600e3 },
+  { ip:"185.99.17.███",  city:"Ақтау",    flag:"🇰🇿", ua:"Android · Chrome",  dt: 5.5*3600e3 },
+  { ip:"77.232.62.███",  city:"Астана",   flag:"🇰🇿", ua:"iPhone · Chrome",   dt: 6.1*3600e3 },
+  { ip:"94.158.51.███",  city:"Алматы",   flag:"🇰🇿", ua:"Android · Chrome",  dt: 7.0*3600e3 },
+  { ip:"46.227.29.███",  city:"Тараз",    flag:"🇰🇿", ua:"Samsung · Chrome",  dt: 8.2*3600e3 },
+  { ip:"178.91.30.███",  city:"Ақтау",    flag:"🇰🇿", ua:"iPhone · Safari",   dt: 9.4*3600e3 },
+  { ip:"213.134.22.███", city:"Алматы",   flag:"🇰🇿", ua:"Windows · Chrome",  dt:10.8*3600e3 },
+  { ip:"95.56.128.███",  city:"Астана",   flag:"🇰🇿", ua:"Android · Chrome",  dt:12.1*3600e3 },
+  { ip:"89.218.10.███",  city:"Шымкент",  flag:"🇰🇿", ua:"iPhone · Safari",   dt:14.0*3600e3 },
+  { ip:"217.197.5.███",  city:"Алматы",   flag:"🇰🇿", ua:"Android · Chrome",  dt:16.5*3600e3 },
+  { ip:"185.99.21.███",  city:"Орал",     flag:"🇰🇿", ua:"Samsung · Chrome",  dt:19.0*3600e3 },
+  { ip:"94.158.53.███",  city:"Ақтау",    flag:"🇰🇿", ua:"iPhone · Safari",   dt:22.0*3600e3 },
+  { ip:"77.232.70.███",  city:"Астана",   flag:"🇰🇿", ua:"Windows · Chrome",  dt:26.0*3600e3 },
+  { ip:"46.227.33.███",  city:"Алматы",   flag:"🇰🇿", ua:"Android · Chrome",  dt:30.0*3600e3 },
+  { ip:"178.91.38.███",  city:"Қарағанды",flag:"🇰🇿", ua:"iPhone · Safari",   dt:34.0*3600e3 },
+  { ip:"213.134.28.███", city:"Алматы",   flag:"🇰🇿", ua:"Android · Chrome",  dt:38.0*3600e3 },
+  { ip:"95.56.135.███",  city:"Ақтөбе",   flag:"🇰🇿", ua:"Samsung · Chrome",  dt:42.0*3600e3 },
 ];
+
+function fmtAgo(ms) {
+  const s = Math.round(ms / 1000);
+  if (s < 60)   return `${s} сек бұрын`;
+  if (s < 3600) return `${Math.round(s/60)} мин бұрын`;
+  const h = Math.round(s/3600);
+  if (h < 24)   return `${h} сағ бұрын`;
+  return `${Math.round(h/24)} күн бұрын`;
+}
+
+function initVisitHistory() {
+  if (localStorage.getItem(SEED_KEY)) return;
+  const now = Date.now();
+  const seeded = SEED_DATA.map(v => ({ ...v, ts: now - v.dt }));
+  localStorage.setItem(VISIT_KEY, JSON.stringify(seeded));
+  localStorage.setItem(SEED_KEY, "1");
+}
+
+function addVisitRecord(ipData) {
+  if (!ipData) return;
+  const stored = JSON.parse(localStorage.getItem(VISIT_KEY) || "[]");
+  stored.unshift({
+    ip: ipData.ipAddress,
+    city: ipData.cityName || ipData.countryName || "—",
+    flag: "🇰🇿",
+    ua: "Сіз (қазір)",
+    ts: Date.now(),
+  });
+  localStorage.setItem(VISIT_KEY, JSON.stringify(stored.slice(0, 200)));
+}
+
+function getVisitHistory() {
+  return JSON.parse(localStorage.getItem(VISIT_KEY) || "[]")
+    .sort((a, b) => b.ts - a.ts);
+}
 
 function useSiteStats() {
   const [visits, setVisits] = useState(null);
@@ -1665,6 +1728,8 @@ function useSiteStats() {
   const [visitorIP, setVisitorIP] = useState(null);
 
   useEffect(() => {
+    initVisitHistory();
+
     fetch(`https://api.counterapi.dev/v1/${STAT_NS}/visits/up`)
       .then(r => r.json()).then(d => setVisits(d.count)).catch(() => {});
 
@@ -1682,7 +1747,7 @@ function useSiteStats() {
 
     fetch("https://freeipapi.com/api/json")
       .then(r => r.json())
-      .then(d => setVisitorIP(d))
+      .then(d => { setVisitorIP(d); addVisitRecord(d); })
       .catch(() => {});
 
     const iv = setInterval(() => {
@@ -1696,7 +1761,9 @@ function useSiteStats() {
   return { visits, online, visitorIP };
 }
 
-function StatsPopup({ onClose, visitorIP }) {
+function StatsPopup({ onClose }) {
+  const [history, setHistory] = useState(() => getVisitHistory());
+  const now = Date.now();
   return (
     <motion.div
       className="stats-popup"
@@ -1704,25 +1771,20 @@ function StatsPopup({ onClose, visitorIP }) {
       exit={{opacity:0,y:6,scale:0.97}} transition={{duration:0.22}}
     >
       <div className="stats-popup__hdr">
-        <span className="stats-popup__title">Соңғы кіргендер</span>
+        <span className="stats-popup__title">Кіру тарихы · {history.length} жазба</span>
         <button className="stats-popup__close" onClick={onClose}><X size={14}/></button>
       </div>
       <div className="stats-popup__list">
-        {visitorIP && (
-          <div className="stats-popup__row stats-popup__row--live">
-            <span className="stats-popup__badge">● ТІК ЭФИР</span>
-            <span className="stats-popup__ip">{visitorIP.ipAddress}</span>
-            <span className="stats-popup__city">{visitorIP.cityName || visitorIP.countryName}</span>
-            <span className="stats-popup__ua">Сіз</span>
-          </div>
-        )}
-        {MOCK_VISITS.map((v,i) => (
-          <div key={i} className="stats-popup__row">
+        {history.map((v, i) => (
+          <div key={i} className={`stats-popup__row${i === 0 && (now - v.ts) < 3*60e3 ? " stats-popup__row--live" : ""}`}>
+            {i === 0 && (now - v.ts) < 3*60e3 && (
+              <span className="stats-popup__badge">● ТІК ЭФИР</span>
+            )}
             <span className="stats-popup__flag">{v.flag}</span>
             <span className="stats-popup__ip">{v.ip}</span>
             <span className="stats-popup__city">{v.city}</span>
             <span className="stats-popup__ua">{v.ua}</span>
-            <span className="stats-popup__ago">{v.ago}</span>
+            <span className="stats-popup__ago">{fmtAgo(now - v.ts)}</span>
           </div>
         ))}
       </div>
@@ -1736,7 +1798,7 @@ function SiteStats() {
   return (
     <div className="site-stats-wrap">
       <AnimatePresence>
-        {open && <StatsPopup key="popup" onClose={() => setOpen(false)} visitorIP={visitorIP} />}
+        {open && <StatsPopup key="popup" onClose={() => setOpen(false)} />}
       </AnimatePresence>
       <motion.div
         className="site-stats"
