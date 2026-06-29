@@ -940,6 +940,13 @@ function TeamMember({ m, i }) {
   );
 }
 
+// ── PEDRO TABS DATA ───────────────────────────────────────────────────
+const AUTO_TABS = [
+  { key:'red',   label:'AutoRed',   badge:'5 shot · 12 сег', segs:AUTO_SEGMENTS, waypoints:FIELD_WAYPOINTS, border:'#f472b6' },
+  { key:'blue',  label:'AutoBlue',  badge:'5 shot · 12 сег', segs:SEGS_BLUE,     waypoints:WP_BLUE,         border:'#3b82f6' },
+  { key:'blue2', label:'AutoBlue2', badge:'4 shot · 8 сег',  segs:SEGS_B2,       waypoints:WP_B2,           border:'#06b6d4' },
+];
+
 // ── PEDRO PATHING VISUALIZER ──────────────────────────────────────────
 // Unique bezier segments for control-point rendering (deduplicated by p1 reference)
 const BEZIER_CTRL_SEGS = AUTO_SEGMENTS
@@ -1295,6 +1302,47 @@ function PedroVisualizerGen({ segs, waypoints, title, subtitle, uid, robotBorder
         ))}
       </div>
     </motion.div>
+  );
+}
+
+// ── PEDRO TABS WRAPPER ────────────────────────────────────────────────
+function PedroTabs() {
+  const [active, setActive] = useState('red');
+  const tab = AUTO_TABS.find(t => t.key === active);
+  return (
+    <div>
+      <div className="pedro-tabs__btns">
+        {AUTO_TABS.map(({ key, label, badge, border }) => (
+          <button
+            key={key}
+            className={`pedro-tabs__btn${active === key ? ' pedro-tabs__btn--on' : ''}`}
+            style={active === key ? { '--tab-col': border } : {}}
+            onClick={() => setActive(key)}
+          >
+            <span className="pedro-tabs__name">{label}</span>
+            <span className="pedro-tabs__badge">{badge}</span>
+          </button>
+        ))}
+      </div>
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={active}
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -14 }}
+          transition={{ duration: 0.22 }}
+        >
+          <PedroVisualizerGen
+            uid={tab.key}
+            segs={tab.segs}
+            waypoints={tab.waypoints}
+            title={`${tab.label} · ${tab.badge}`}
+            subtitle={`ZHORIK ${tab.label.toUpperCase()} · нақты координаттар`}
+            robotBorder={tab.border}
+          />
+        </motion.div>
+      </AnimatePresence>
+    </div>
   );
 }
 
@@ -2536,29 +2584,7 @@ export default function App() {
         </Sec>
 
         <Sec id="auto" eye={t("sec.auto.eye")} title={t("sec.auto.title")} desc={t("sec.auto.desc")}>
-          <PedroVisualizer />
-        </Sec>
-
-        <Sec id="autoblue" eye={t("sec.autoblue.eye")} title={t("sec.autoblue.title")} desc={t("sec.autoblue.desc")}>
-          <PedroVisualizerGen
-            uid="blue"
-            segs={SEGS_BLUE}
-            waypoints={WP_BLUE}
-            title="AutoBlue · 5 shots"
-            subtitle="ZHORIK AUTO BLUE · 12 сегмент, Blue альянс"
-            robotBorder="#3b82f6"
-          />
-        </Sec>
-
-        <Sec id="autoblue2" eye={t("sec.autoblue2.eye")} title={t("sec.autoblue2.title")} desc={t("sec.autoblue2.desc")}>
-          <PedroVisualizerGen
-            uid="blue2"
-            segs={SEGS_B2}
-            waypoints={WP_B2}
-            title="AutoBlue2 · 4 shots"
-            subtitle="AUTO BLUE 2 · жылдам стратегия, 8 сегмент"
-            robotBorder="#06b6d4"
-          />
+          <PedroTabs />
         </Sec>
 
         <Sec id="ranking" eye={t("sec.ranking.eye")} title={t("sec.ranking.title")} desc={t("sec.ranking.desc")}>
