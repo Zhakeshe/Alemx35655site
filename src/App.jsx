@@ -1688,49 +1688,53 @@ function fmtAgo(ms) {
 }
 
 function LivePanel() {
-  const [visitors, setVisitors]     = useState([]);
+  const [online,      setOnline]      = useState(0);
+  const [history,     setHistory]     = useState([]);
   const [totalVisits, setTotalVisits] = useState(null);
-  const [tick, setTick]             = useState(0);
+  const [tick,        setTick]        = useState(0);
 
   useEffect(() => {
-    // Total visits counter (real)
     fetch(`https://api.counterapi.dev/v1/${STAT_NS}/visits/up`)
       .then(r => r.json()).then(d => setTotalVisits(d.count)).catch(() => {});
 
-    // Tick every 15s so "X сек" times stay fresh
     const tickIv = setInterval(() => setTick(t => t + 1), 15_000);
-
     if (!FIREBASE_READY) return () => clearInterval(tickIv);
 
-    const cleanups = [];
+    const offs = [];
 
     initFirebase().then(ok => {
       if (!ok) return;
 
       const presRef = FB.fbRef(FB.db, `presence/${SESSION_ID}`);
 
-      // Register self (with or without IP)
-      const register = (ip, city) => {
-        const entry = { ip, city, flag: "🇰🇿", device: detectDevice(), ts: Date.now() };
-        FB.fbSet(presRef, entry);
+      const log = city => {
+        // Presence — online count (removed on disconnect)
+        FB.fbSet(presRef, { city, device: detectDevice(), ts: Date.now() });
         FB.fbOnDisconnect(presRef).remove();
+        // Visit history — stays in Firebase permanently
+        FB.fbPush(FB.fbRef(FB.db, "visits"), { city, device: detectDevice(), ts: Date.now() });
       };
 
       fetch("https://freeipapi.com/api/json")
         .then(r => r.json())
-        .then(d => register(maskIP(d.ipAddress), d.cityName || d.countryName || "—"))
-        .catch(() => register("•••.•••.•••.•••", "—"));
+        .then(d => log(d.cityName || d.countryName || "—"))
+        .catch(() => log("—"));
 
-      // Listen to ALL online users in real-time
-      const off = FB.fbOnValue(FB.fbRef(FB.db, "presence"), snap => {
+      // Online count (presence)
+      offs.push(FB.fbOnValue(FB.fbRef(FB.db, "presence"), snap => {
+        setOnline(snap.size);
+      }));
+
+      // Visit history (last 60, newest first)
+      const q = FB.fbQuery(FB.fbRef(FB.db, "visits"), FB.fbLimitToLast(60));
+      offs.push(FB.fbOnValue(q, snap => {
         const list = [];
         snap.forEach(c => list.push({ _id: c.key, ...c.val() }));
-        setVisitors(list.sort((a, b) => b.ts - a.ts));
-      });
-      cleanups.push(off);
+        setHistory(list.reverse());
+      }));
     });
 
-    return () => { clearInterval(tickIv); cleanups.forEach(fn => fn?.()); };
+    return () => { clearInterval(tickIv); offs.forEach(f => f?.()); };
   }, []);
 
   const now = Date.now();
@@ -1740,42 +1744,37 @@ function LivePanel() {
       initial={{opacity:0,y:20}} whileInView={{opacity:1,y:0}}
       viewport={{once:true}} transition={{duration:0.5}}>
 
-      {/* Header */}
       <div className="live-panel__hdr">
         <div className="live-panel__hdr-left">
           <span className="live-panel__dot-pulse"/>
-          <span className="live-panel__title">
-            {FIREBASE_READY ? visitors.length : "—"} адам онлайн
-          </span>
+          <span className="live-panel__title">{online} адам онлайн</span>
         </div>
         <div className="live-panel__hdr-right">
           <Eye size={13}/>
-          <span>{totalVisits != null ? totalVisits.toLocaleString("ru") : "…"} барлық визит</span>
+          <span>{totalVisits != null ? totalVisits.toLocaleString("ru") : "…"} визит</span>
         </div>
       </div>
 
-      {/* Body */}
       {!FIREBASE_READY ? (
         <div className="live-panel__note">
-          Firebase конфигурациясын <b>src/firebase.js</b> файлына қойыңыз — нақты онлайн қосылады
+          Firebase конфигурациясын <b>src/firebase.js</b> файлына қойыңыз
         </div>
-      ) : visitors.length === 0 ? (
+      ) : history.length === 0 ? (
         <div className="live-panel__note">Жүктелуде…</div>
       ) : (
         <div className="live-panel__list">
           <AnimatePresence initial={false}>
-            {visitors.map((v, i) => (
+            {history.map((v, i) => (
               <motion.div key={v._id}
-                className={`live-panel__row${v._id === SESSION_ID ? " live-panel__row--me" : ""}`}
-                initial={{opacity:0,y:-8}} animate={{opacity:1,y:0}}
-                exit={{opacity:0,height:0,marginBottom:0}} transition={{duration:0.25}}
+                className={`live-panel__row${i === 0 ? " live-panel__row--me" : ""}`}
+                initial={{opacity:0,y:-6}} animate={{opacity:1,y:0}}
+                exit={{opacity:0}} transition={{duration:0.22}}
               >
                 <span className="live-panel__flag">🇰🇿</span>
-                <span className="live-panel__ip">{v.ip}</span>
                 <span className="live-panel__city">{v.city}</span>
                 <span className="live-panel__device">{v.device}</span>
                 <span className="live-panel__ago">{fmtAgo(now - v.ts)}</span>
-                {v._id === SESSION_ID && <span className="live-panel__you">← сіз</span>}
+                {i === 0 && <span className="live-panel__you">● қазір</span>}
               </motion.div>
             ))}
           </AnimatePresence>
