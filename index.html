@@ -28,6 +28,13 @@
   </head>
   <body>
     <div id="root"></div>
+    <!-- GitHub Pages SPA redirect -->
+    <script>
+      (function(){
+        var r = sessionStorage.getItem('spa_redirect');
+        if (r) { sessionStorage.removeItem('spa_redirect'); window.history.replaceState(null, null, r); }
+      })();
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
