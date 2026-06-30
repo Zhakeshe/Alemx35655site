@@ -2151,3 +2151,124 @@ img { display: block; max-width: 100%; }
   text-shadow:0 0 28px rgba(232,121,249,.45);letter-spacing:.04em;
   margin-top:.1rem;
 }
+
+/* ── FTC LIVE RANKING TAB ──────────────────────────────────────── */
+.tc-rank-wrap   { display:flex;flex-direction:column;gap:.65rem; }
+.tc-rank-meta   { font-size:.72rem;font-weight:700;letter-spacing:.06em;color:rgba(196,181,253,.5);text-align:right; }
+.tc-rank-live   { color:#4ade80;letter-spacing:.04em; }
+.tc-rank-scroll { overflow-x:auto;-webkit-overflow-scrolling:touch; }
+.tc-rank-refresh {
+  margin-left:auto;padding:.32rem .7rem;font-size:.88rem;border-radius:8px;
+  border:1px solid rgba(168,85,247,.2);background:transparent;color:rgba(196,181,253,.5);
+  cursor:pointer;transition:color .15s,border-color .15s;
+}
+.tc-rank-refresh:hover { color:#c4b5fd;border-color:rgba(168,85,247,.45); }
+
+.tc-rank-table {
+  display:grid;
+  grid-template-columns:2.4rem 1fr 3.5rem 2.5rem 3rem;
+  gap:1px;background:rgba(168,85,247,.1);
+  border:1px solid rgba(168,85,247,.15);border-radius:12px;overflow:hidden;
+  min-width:300px;
+}
+.tc-rank-head {
+  display:contents;
+}
+.tc-rank-head > span {
+  padding:.42rem .5rem;font-size:.65rem;font-weight:800;letter-spacing:.1em;
+  text-transform:uppercase;color:rgba(196,181,253,.5);background:rgba(15,5,35,.7);
+  text-align:center;
+}
+.tc-rank-head > span:nth-child(2) { text-align:left;padding-left:.7rem; }
+
+.tc-rank-row {
+  display:contents;
+  cursor:pointer;
+}
+.tc-rank-row > span {
+  padding:.52rem .5rem;font-size:.78rem;background:rgba(10,3,26,.6);
+  color:rgba(216,180,254,.85);text-align:center;transition:background .12s;
+  display:flex;align-items:center;justify-content:center;
+}
+.tc-rank-row:hover > span { background:rgba(168,85,247,.1); }
+
+.tc-rank-row--highlight > span { background:rgba(168,85,247,.13) !important; }
+.tc-rank-row--highlight .tc-rank-name { color:#e2d9f3;font-weight:800; }
+.tc-rank-row--highlight .tc-rank-pos  { color:#ffc516;font-weight:900; }
+
+.tc-rank-row--unranked { cursor:default; }
+.tc-rank-row--unranked > span { opacity:.38;background:rgba(10,3,26,.3) !important; }
+
+.tc-rank-team {
+  display:flex !important;flex-direction:column;align-items:flex-start !important;
+  justify-content:center !important;gap:.08rem;padding-left:.7rem !important;
+}
+.tc-rank-name { font-size:.78rem;font-weight:700;color:#d8b4fe;line-height:1.2;text-align:left; }
+.tc-rank-num  { font-size:.64rem;color:rgba(168,85,247,.55);font-weight:600; }
+.tc-rank-pos  { font-size:.82rem;font-weight:900;color:#a855f7; }
+.tc-rank-wl   { font-size:.75rem;font-weight:700;color:#c4b5fd; }
+.tc-rank-rp   { font-size:.8rem;font-weight:800;color:#e879f9; }
+.tc-rank-tb   { font-size:.75rem;color:rgba(196,181,253,.65); }
+
+.tc-rank-divider {
+  grid-column:1/-1;padding:.35rem .7rem;font-size:.65rem;font-weight:800;
+  letter-spacing:.1em;text-transform:uppercase;color:rgba(196,181,253,.35);
+  background:rgba(168,85,247,.04);border-top:1px solid rgba(168,85,247,.1);
+}
+
+/* ── FTC MATCH CARDS ──────────────────────────────────────────── */
+.tc-match-card {
+  border-radius:12px;border:1px solid rgba(168,85,247,.15);
+  background:rgba(10,3,26,.7);padding:.65rem .85rem;
+  display:flex;flex-direction:column;gap:.45rem;
+}
+.tc-match-num {
+  font-size:.65rem;font-weight:900;letter-spacing:.12em;text-transform:uppercase;
+  color:rgba(168,85,247,.5);
+}
+.tc-match-alliances {
+  display:flex;align-items:stretch;gap:.4rem;
+}
+.tc-match-side {
+  flex:1;display:flex;align-items:center;gap:.5rem;
+  padding:.4rem .6rem;border-radius:8px;border:1px solid transparent;
+  transition:border-color .15s;
+}
+.tc-match-side--red  { background:rgba(239,68,68,.07);border-color:rgba(239,68,68,.15); }
+.tc-match-side--blue { background:rgba(59,130,246,.07);border-color:rgba(59,130,246,.15);flex-direction:row-reverse; }
+.tc-match-side--win  { border-width:1.5px; }
+.tc-match-side--red.tc-match-side--win  { border-color:rgba(239,68,68,.5);box-shadow:0 0 12px rgba(239,68,68,.1); }
+.tc-match-side--blue.tc-match-side--win { border-color:rgba(59,130,246,.5);box-shadow:0 0 12px rgba(59,130,246,.1); }
+
+.tc-match-score {
+  font-size:1.35rem;font-weight:900;line-height:1;min-width:2.4rem;text-align:center;
+  flex-shrink:0;
+}
+.tc-match-side--red  .tc-match-score { color:#f87171; }
+.tc-match-side--blue .tc-match-score { color:#60a5fa; }
+.tc-match-side--win  .tc-match-score { text-shadow:0 0 16px currentColor; }
+
+.tc-match-teams {
+  display:flex;flex-direction:column;gap:.06rem;flex:1;min-width:0;
+}
+.tc-match-teams span {
+  font-size:.67rem;font-weight:600;color:rgba(216,180,254,.65);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.tc-match-team--me {
+  color:#e879f9 !important;font-weight:800 !important;
+}
+.tc-match-mid {
+  display:flex;align-items:center;justify-content:center;font-size:1rem;
+  flex-shrink:0;width:1.4rem;
+}
+.tc-match-breakdown {
+  display:flex;justify-content:space-between;
+  font-size:.65rem;font-weight:600;letter-spacing:.03em;
+  padding-top:.3rem;border-top:1px solid rgba(168,85,247,.1);
+}
+.tc-match-detail-row {
+  display:flex;gap:.75rem;font-size:.68rem;color:rgba(196,181,253,.55);
+  margin-top:.08rem;
+}
+.tc-match-detail-row b { color:rgba(196,181,253,.85); }

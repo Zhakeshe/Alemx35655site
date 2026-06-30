@@ -359,7 +359,8 @@ const AWARD_LABEL = {
 const ord = n => n===1?"1st":n===2?"2nd":n===3?"3rd":`${n}th`;
 
 const Q_SEARCH = `query($q:String!,$l:Int){teamsSearch(searchText:$q,limit:$l){number name location{city state country}rookieYear}}`;
-const Q_TEAM   = `query($n:Int!,$s:Int!){teamByNumber(number:$n){number name schoolName location{city state country}rookieYear quickStats(season:$s){count tot{value rank}auto{value rank}dc{value rank}eg{value rank}}events(season:$s){event{name location{city}start}stats{...on TeamEventStats2019{rank wins losses ties}...on TeamEventStats2022{rank wins losses ties}...on TeamEventStats2023{rank wins losses ties}...on TeamEventStats2024{rank wins losses ties}...on TeamEventStats2025{rank wins losses ties rp}}awards{type placement}}matches(season:$s){alliance allianceRole match{hasBeenPlayed tournamentLevel matchNum description event{name}teams{teamNumber alliance onField noShow}scores{...on MatchScores2025{red{totalPoints autoPoints dcPoints}blue{totalPoints autoPoints dcPoints}}}}}}}`
+const Q_TEAM   = `query($n:Int!,$s:Int!){teamByNumber(number:$n){number name schoolName location{city state country}rookieYear quickStats(season:$s){count tot{value rank}auto{value rank}dc{value rank}eg{value rank}}events(season:$s){event{name location{city}start}stats{...on TeamEventStats2019{rank wins losses ties}...on TeamEventStats2022{rank wins losses ties}...on TeamEventStats2023{rank wins losses ties}...on TeamEventStats2024{rank wins losses ties}...on TeamEventStats2025{rank wins losses ties rp}}awards{type placement}}matches(season:$s){alliance allianceRole match{hasBeenPlayed tournamentLevel matchNum description event{name}teams{teamNumber alliance onField noShow}scores{...on MatchScores2025{red{totalPoints autoPoints dcPoints}blue{totalPoints autoPoints dcPoints}}}}}}}`;
+const Q_TC_RANKINGS = `{eventByCode(season:2025,code:"KZALOS1"){teams{team{number name}stats{...on TeamEventStats2025{rank rp tb1 tb2 wins losses ties qualMatchesPlayed}}}matches{matchNum teams{teamNumber alliance allianceRole onField}scores{...on MatchScores2025{red{totalPoints autoPoints dcPoints penaltyPointsCommitted}blue{totalPoints autoPoints dcPoints penaltyPointsCommitted}}}}}}`
 
 const timeline = [
   { dateKey: "tl.0.date", phaseKey: "tl.0.phase", descKey: "tl.0.desc", col: "#a855f7" },
@@ -2943,11 +2944,257 @@ function FTCTeamSearch() {
   );
 }
 
+// ── FTC RANKINGS TAB (Live from FTC Scout) ────────────────────────────
+function FTCRankingTab() {
+  const { lang } = useLang();
+  const [data, setData]       = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [view, setView]       = useState("ranking");
+  const [selected, setSelected] = useState(null);
+
+  const load = useCallback(async () => {
+    try {
+      const d = await ftcGql(Q_TC_RANKINGS, {});
+      setData(d.eventByCode ?? null);
+    } catch (_) {}
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    load();
+    const iv = setInterval(load, 30000);
+    return () => clearInterval(iv);
+  }, [load]);
+
+  const ranked = useMemo(() => {
+    if (!data) return [];
+    return data.teams.filter(t => t.stats).sort((a, b) => a.stats.rank - b.stats.rank);
+  }, [data]);
+
+  const unranked = useMemo(() => {
+    if (!data) return [];
+    return data.teams.filter(t => !t.stats);
+  }, [data]);
+
+  const playedMatches = useMemo(() => {
+    if (!data) return [];
+    return data.matches.filter(m => m.scores);
+  }, [data]);
+
+  const L = {
+    rank:    lang==="kz"?"🏆 Рейтинг":lang==="ru"?"🏆 Рейтинг":"🏆 Ranking",
+    matches: lang==="kz"?"⚽ Матчтар":lang==="ru"?"⚽ Матчи":"⚽ Matches",
+    loading: lang==="kz"?"Жүктелуде...":lang==="ru"?"Загрузка...":"Loading...",
+    noData:  lang==="kz"?"Деректер жоқ":lang==="ru"?"Нет данных":"No data",
+    back:    lang==="kz"?"← Артқа":lang==="ru"?"← Назад":"← Back",
+    noMatch: lang==="kz"?"Матч ойналмады":lang==="ru"?"Матчи не сыграны":"No matches played yet",
+    notYet:  lang==="kz"?"Матч ойналмаған командалар":lang==="ru"?"Ещё не играли":"Not yet played",
+    teams:   lang==="kz"?"команда":lang==="ru"?"команд":"teams",
+  };
+
+  if (loading) return <div className="ftc-scout-loading">{L.loading}</div>;
+  if (!data)   return <div className="ftc-scout-loading">{L.noData}</div>;
+
+  // ── Team detail view ──
+  if (selected) {
+    const t = selected;
+    const teamMatches = data.matches.filter(m =>
+      m.teams.some(tm => tm.teamNumber === t.team.number && tm.onField)
+    );
+    return (
+      <div className="fll-search-wrap">
+        <button className="fll-detail-back" onClick={() => setSelected(null)}>{L.back}</button>
+        <div className="fll-detail-name">
+          {t.team.name} <span className="ftc-detail-num">#{t.team.number}</span>
+        </div>
+        {t.stats && (
+          <div className="ftc-scout-stats">
+            {[
+              { label: lang==="kz"?"Орын":lang==="ru"?"Место":"Rank",       v: `#${t.stats.rank}`,                          col:"#ffc516" },
+              { label: "W–L–T",                                               v: `${t.stats.wins}–${t.stats.losses}–${t.stats.ties}`, col:"#a855f7" },
+              { label: "RP",                                                  v: t.stats.rp,                                  col:"#c084fc" },
+              { label: "TB1",                                                 v: t.stats.tb1,                                 col:"#f472b6" },
+              { label: "TB2",                                                 v: t.stats.tb2,                                 col:"#7c3aed" },
+            ].map(({ label, v, col }) => (
+              <div key={label} className="ftc-scout-stat-row">
+                <span className="ftc-scout-stat-label">{label}</span>
+                <span className="ftc-scout-stat-value" style={{ color: col }}>{v}</span>
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="fll-hit-section">
+          <div className="fll-hit-section-title">{L.matches}</div>
+          {teamMatches.length === 0
+            ? <div className="fll-search-hint">{L.noMatch}</div>
+            : teamMatches.map(m => {
+                const myT  = m.teams.find(tm => tm.teamNumber === t.team.number && tm.onField);
+                const ally = myT?.alliance;
+                const sc   = m.scores;
+                const mySc  = sc ? (ally === "Red" ? sc.red  : sc.blue) : null;
+                const oppSc = sc ? (ally === "Red" ? sc.blue : sc.red)  : null;
+                const won  = mySc && oppSc && mySc.totalPoints > oppSc.totalPoints;
+                const tied = mySc && oppSc && mySc.totalPoints === oppSc.totalPoints;
+                const partners  = m.teams.filter(tm => tm.alliance === ally  && tm.onField && tm.teamNumber !== t.team.number);
+                const opponents = m.teams.filter(tm => tm.alliance !== ally  && tm.onField);
+                return (
+                  <div key={m.matchNum} className={`fll-hit-card fll-hit-card--game${!sc ? " fll-hit-card--past" : ""}`}>
+                    <div className="fll-hit-left">
+                      <span className={`tm-alliance tm-alliance--${(ally || "").toLowerCase()}`}>{ally?.[0] ?? "?"}</span>
+                      <div className="fll-hit-time">Q{m.matchNum}</div>
+                    </div>
+                    <div className="fll-hit-right">
+                      {sc ? (
+                        <>
+                          <div className="fll-hit-round">
+                            <span className={`tm-result tm-result--${won ? "win" : tied ? "tie" : "loss"}`}>{won ? "W" : tied ? "T" : "L"}</span>
+                            {" · "}
+                            <span style={{ color:"#ef4444", fontWeight:800 }}>{sc.red.totalPoints}</span>
+                            {" : "}
+                            <span style={{ color:"#3b82f6", fontWeight:800 }}>{sc.blue.totalPoints}</span>
+                          </div>
+                          <div className="fll-hit-field">
+                            {partners.map(tm => `#${tm.teamNumber}`).join(" ")} vs {opponents.map(tm => `#${tm.teamNumber}`).join(" ")}
+                          </div>
+                          <div className="tc-match-detail-row">
+                            <span>Auto: <b>{mySc.autoPoints}</b></span>
+                            <span>DC: <b>{mySc.dcPoints}</b></span>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="fll-hit-round">{lang==="kz"?"Ойналмады":lang==="ru"?"Не сыграно":"Not played"}</div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+          }
+        </div>
+      </div>
+    );
+  }
+
+  // ── Main view ──
+  return (
+    <div className="fll-tab-wrap">
+      <div className="fll-subtabs">
+        <button className={`fll-subtab${view === "ranking" ? " fll-subtab--on" : ""}`} onClick={() => setView("ranking")}>{L.rank}</button>
+        <button className={`fll-subtab${view === "matches" ? " fll-subtab--on" : ""}`} onClick={() => setView("matches")}>{L.matches}</button>
+        <button className="fll-subtab tc-rank-refresh" onClick={load} title="Refresh">↻</button>
+      </div>
+
+      <AnimatePresence mode="wait">
+        <motion.div key={view} initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, y:-8 }} transition={{ duration:0.22 }}>
+          {view === "ranking" ? (
+            <div className="tc-rank-wrap">
+              <div className="tc-rank-meta">
+                {ranked.length} / {data.teams.length} {L.teams} · <span className="tc-rank-live">● LIVE</span>
+              </div>
+              <div className="tc-rank-scroll">
+                <div className="tc-rank-table">
+                  <div className="tc-rank-head">
+                    <span>#</span>
+                    <span>{lang==="kz"?"Команда":lang==="ru"?"Команда":"Team"}</span>
+                    <span>W–L</span>
+                    <span>RP</span>
+                    <span>TB1</span>
+                  </div>
+                  {ranked.map(entry => (
+                    <button
+                      key={entry.team.number}
+                      className={`tc-rank-row${entry.team.number === 33655 ? " tc-rank-row--highlight" : ""}`}
+                      onClick={() => setSelected(entry)}
+                    >
+                      <span className="tc-rank-pos">{entry.stats.rank}</span>
+                      <span className="tc-rank-team">
+                        <span className="tc-rank-name">{entry.team.name}</span>
+                        <span className="tc-rank-num">#{entry.team.number}</span>
+                      </span>
+                      <span className="tc-rank-wl">{entry.stats.wins}–{entry.stats.losses}</span>
+                      <span className="tc-rank-rp">{entry.stats.rp}</span>
+                      <span className="tc-rank-tb">{entry.stats.tb1}</span>
+                    </button>
+                  ))}
+                  {unranked.length > 0 && (
+                    <>
+                      <div className="tc-rank-divider">{L.notYet}</div>
+                      {unranked.map(entry => (
+                        <div key={entry.team.number} className="tc-rank-row tc-rank-row--unranked">
+                          <span className="tc-rank-pos">—</span>
+                          <span className="tc-rank-team">
+                            <span className="tc-rank-name">{entry.team.name}</span>
+                            <span className="tc-rank-num">#{entry.team.number}</span>
+                          </span>
+                          <span className="tc-rank-wl">—</span>
+                          <span className="tc-rank-rp">—</span>
+                          <span className="tc-rank-tb">—</span>
+                        </div>
+                      ))}
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="tc-rank-wrap">
+              {playedMatches.length === 0 ? (
+                <div className="fll-search-hint">{L.noMatch}</div>
+              ) : (
+                [...playedMatches].reverse().map(m => {
+                  const red  = m.teams.filter(tm => tm.alliance === "Red"  && tm.onField);
+                  const blue = m.teams.filter(tm => tm.alliance === "Blue" && tm.onField);
+                  const sc   = m.scores;
+                  const redWin = sc && sc.red.totalPoints > sc.blue.totalPoints;
+                  return (
+                    <div key={m.matchNum} className="tc-match-card">
+                      <div className="tc-match-num">Q{m.matchNum}</div>
+                      <div className="tc-match-alliances">
+                        <div className={`tc-match-side tc-match-side--red${redWin ? " tc-match-side--win" : ""}`}>
+                          <div className="tc-match-teams">
+                            {red.map(tm => (
+                              <span key={tm.teamNumber} className={tm.teamNumber === 33655 ? "tc-match-team--me" : ""}># {tm.teamNumber}</span>
+                            ))}
+                          </div>
+                          <span className="tc-match-score">{sc?.red.totalPoints ?? "?"}</span>
+                        </div>
+                        <div className="tc-match-mid">
+                          <span className={redWin ? "tc-match-winner--red" : "tc-match-winner--blue"}>
+                            {redWin ? "🔴" : "🔵"}
+                          </span>
+                        </div>
+                        <div className={`tc-match-side tc-match-side--blue${!redWin && sc ? " tc-match-side--win" : ""}`}>
+                          <span className="tc-match-score">{sc?.blue.totalPoints ?? "?"}</span>
+                          <div className="tc-match-teams">
+                            {blue.map(tm => (
+                              <span key={tm.teamNumber} className={tm.teamNumber === 33655 ? "tc-match-team--me" : ""}># {tm.teamNumber}</span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                      {sc && (
+                        <div className="tc-match-breakdown">
+                          <span style={{ color:"rgba(239,68,68,.7)" }}>Auto {sc.red.autoPoints} · DC {sc.red.dcPoints}</span>
+                          <span style={{ color:"rgba(59,130,246,.7)" }}>Auto {sc.blue.autoPoints} · DC {sc.blue.dcPoints}</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          )}
+        </motion.div>
+      </AnimatePresence>
+    </div>
+  );
+}
+
 // ── FTC TAB — Search + Schedule + Streams ─────────────────────────────
 function FTCTab({ t }) {
   const { lang } = useLang();
-  const [sub, setSub] = useState("search");
+  const [sub, setSub] = useState("ranking");
   const subs = [
+    { key:"ranking",  lbl: lang==="kz"?"Рейтинг":lang==="ru"?"Рейтинг":"Ranking" },
     { key:"search",   lbl: lang==="kz"?"Іздеу":lang==="ru"?"Поиск":"Search" },
     { key:"schedule", lbl: lang==="kz"?"Кесте":lang==="ru"?"Расписание":"Schedule" },
     { key:"streams",  lbl: lang==="kz"?"Стрим":lang==="ru"?"Стримы":"Streams" },
@@ -2965,7 +3212,8 @@ function FTCTab({ t }) {
       </div>
       <AnimatePresence mode="wait">
         <motion.div key={sub} initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-8}} transition={{duration:0.22}}>
-          {sub==="search" ? <FTCTeamSearch /> :
+          {sub==="ranking"  ? <FTCRankingTab /> :
+           sub==="search"   ? <FTCTeamSearch /> :
            sub==="schedule" ? <FTCJudgingSchedule /> : (
             <div className="ftc-streams-wrap">
               {streams.map((s, i) => (
