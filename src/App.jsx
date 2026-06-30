@@ -396,18 +396,18 @@ const P = {
 
 // Full path sequence matching AutoRed.java state machine
 const AUTO_SEGMENTS = [
-  { type:'line',   p0:P.start,    p2:P.shoot,                    col:'#ffc516', state:'START'  },
-  { type:'bezier', p0:P.shoot,    p1:P.ctrl1,    p2:P.c1,        col:'#a855f7', state:'COL 1'  },
-  { type:'bezier', p0:P.c1,       p1:P.rCtrl1,   p2:P.shoot,     col:'#f472b6', state:'RET 1'  },
-  { type:'line',   p0:P.shoot,    p2:P.c2,                       col:'#a855f7', state:'COL 2'  },
-  { type:'line',   p0:P.c2,       p2:P.shoot,                    col:'#f472b6', state:'RET 2'  },
-  { type:'line',   p0:P.shoot,    p2:P.gate,                     col:'#a855f7', state:'COL 3'  },
-  { type:'bezier', p0:P.gate,     p1:P.gateCtrl, p2:P.gateDeep,  col:'#c084fc', state:'GATE'   },
-  { type:'line',   p0:P.gateDeep, p2:P.shoot,                    col:'#f472b6', state:'RET 3'  },
-  { type:'line',   p0:P.shoot,    p2:P.gate,                     col:'#a855f7', state:'COL 4'  },
-  { type:'bezier', p0:P.gate,     p1:P.gateCtrl, p2:P.gateDeep,  col:'#c084fc', state:'GATE'   },
-  { type:'line',   p0:P.gateDeep, p2:P.shoot,                    col:'#f472b6', state:'RET 4'  },
-  { type:'line',   p0:P.shoot,    p2:P.park,                     col:'#7c3aed', state:'PARK'   },
+  { type:'line',   p0:P.start,    p2:P.shoot,                    col:'#ffc516', state:'START',  turretDeg:90  },
+  { type:'bezier', p0:P.shoot,    p1:P.ctrl1,    p2:P.c1,        col:'#a855f7', state:'COL 1',  turretDeg:315 },
+  { type:'bezier', p0:P.c1,       p1:P.rCtrl1,   p2:P.shoot,     col:'#f472b6', state:'RET 1',  turretDeg:90  },
+  { type:'line',   p0:P.shoot,    p2:P.c2,                       col:'#a855f7', state:'COL 2',  turretDeg:315 },
+  { type:'line',   p0:P.c2,       p2:P.shoot,                    col:'#f472b6', state:'RET 2',  turretDeg:90  },
+  { type:'line',   p0:P.shoot,    p2:P.gate,                     col:'#a855f7', state:'COL 3',  turretDeg:0   },
+  { type:'bezier', p0:P.gate,     p1:P.gateCtrl, p2:P.gateDeep,  col:'#c084fc', state:'GATE',   turretDeg:270 },
+  { type:'line',   p0:P.gateDeep, p2:P.shoot,                    col:'#f472b6', state:'RET 3',  turretDeg:90  },
+  { type:'line',   p0:P.shoot,    p2:P.gate,                     col:'#a855f7', state:'COL 4',  turretDeg:0   },
+  { type:'bezier', p0:P.gate,     p1:P.gateCtrl, p2:P.gateDeep,  col:'#c084fc', state:'GATE',   turretDeg:270 },
+  { type:'line',   p0:P.gateDeep, p2:P.shoot,                    col:'#f472b6', state:'RET 4',  turretDeg:90  },
+  { type:'line',   p0:P.shoot,    p2:P.park,                     col:'#7c3aed', state:'PARK',   turretDeg:90  },
 ];
 
 // Named waypoints shown as labels on the field
@@ -525,18 +525,18 @@ const PB = {
   park:     { x: 39.67, y: 58.22, deg: 180 },
 };
 const SEGS_BLUE = [
-  { type:'line',   p0:PB.start,    p2:PB.shoot,                          col:'#ffc516', state:'START' },
-  { type:'bezier', p0:PB.shoot,    p1:PB.ctrl1,    p2:PB.c1,             col:'#3b82f6', state:'COL 1' },
-  { type:'bezier', p0:PB.c1,       p1:PB.rCtrl1,   p2:PB.shoot,          col:'#60a5fa', state:'RET 1' },
-  { type:'line',   p0:PB.shoot,    p2:PB.c2,                             col:'#3b82f6', state:'COL 2' },
-  { type:'line',   p0:PB.c2,       p2:PB.shoot,                          col:'#60a5fa', state:'RET 2' },
-  { type:'line',   p0:PB.shoot,    p2:PB.gate,                           col:'#3b82f6', state:'COL 3' },
-  { type:'bezier', p0:PB.gate,     p1:PB.gateCtrl, p2:PB.gateDeep,       col:'#a78bfa', state:'GATE'  },
-  { type:'line',   p0:PB.gateDeep, p2:PB.shoot,                          col:'#60a5fa', state:'RET 3' },
-  { type:'line',   p0:PB.shoot,    p2:PB.gate,                           col:'#3b82f6', state:'COL 4' },
-  { type:'bezier', p0:PB.gate,     p1:PB.gateCtrl, p2:PB.gateDeep,       col:'#a78bfa', state:'GATE'  },
-  { type:'line',   p0:PB.gateDeep, p2:PB.shoot,                          col:'#60a5fa', state:'RET 4' },
-  { type:'line',   p0:PB.shoot,    p2:PB.park,                           col:'#1d4ed8', state:'PARK'  },
+  { type:'line',   p0:PB.start,    p2:PB.shoot,                          col:'#ffc516', state:'START',  turretDeg:90  },
+  { type:'bezier', p0:PB.shoot,    p1:PB.ctrl1,    p2:PB.c1,             col:'#3b82f6', state:'COL 1',  turretDeg:225 },
+  { type:'bezier', p0:PB.c1,       p1:PB.rCtrl1,   p2:PB.shoot,          col:'#60a5fa', state:'RET 1',  turretDeg:90  },
+  { type:'line',   p0:PB.shoot,    p2:PB.c2,                             col:'#3b82f6', state:'COL 2',  turretDeg:225 },
+  { type:'line',   p0:PB.c2,       p2:PB.shoot,                          col:'#60a5fa', state:'RET 2',  turretDeg:90  },
+  { type:'line',   p0:PB.shoot,    p2:PB.gate,                           col:'#3b82f6', state:'COL 3',  turretDeg:180 },
+  { type:'bezier', p0:PB.gate,     p1:PB.gateCtrl, p2:PB.gateDeep,       col:'#a78bfa', state:'GATE',   turretDeg:270 },
+  { type:'line',   p0:PB.gateDeep, p2:PB.shoot,                          col:'#60a5fa', state:'RET 3',  turretDeg:90  },
+  { type:'line',   p0:PB.shoot,    p2:PB.gate,                           col:'#3b82f6', state:'COL 4',  turretDeg:180 },
+  { type:'bezier', p0:PB.gate,     p1:PB.gateCtrl, p2:PB.gateDeep,       col:'#a78bfa', state:'GATE',   turretDeg:270 },
+  { type:'line',   p0:PB.gateDeep, p2:PB.shoot,                          col:'#60a5fa', state:'RET 4',  turretDeg:90  },
+  { type:'line',   p0:PB.shoot,    p2:PB.park,                           col:'#1d4ed8', state:'PARK',   turretDeg:90  },
 ];
 const WP_BLUE = [
   { p: PB.start,    label:'START', col:'#ffc516' },
@@ -559,13 +559,13 @@ const PB2 = {
   park:   { x: 59.94, y: 117.92, deg: 270 },
 };
 const SEGS_B2 = [
-  { type:'bezier', p0:PB2.shoot, p1:PB2.ctrl1, p2:PB2.c1,    col:'#06b6d4', state:'COL 1' },
-  { type:'line',   p0:PB2.c1,   p2:PB2.shoot,                col:'#22d3ee', state:'RET 1' },
-  { type:'line',   p0:PB2.shoot, p2:PB2.c2,                  col:'#06b6d4', state:'COL 2' },
-  { type:'line',   p0:PB2.c2,   p2:PB2.shoot,                col:'#22d3ee', state:'RET 2' },
-  { type:'line',   p0:PB2.shoot, p2:PB2.c2,                  col:'#06b6d4', state:'COL 3' },
-  { type:'line',   p0:PB2.c2,   p2:PB2.shoot,                col:'#22d3ee', state:'RET 3' },
-  { type:'line',   p0:PB2.shoot, p2:PB2.park,                col:'#0e7490', state:'PARK'  },
+  { type:'bezier', p0:PB2.shoot, p1:PB2.ctrl1, p2:PB2.c1,    col:'#06b6d4', state:'COL 1', turretDeg:225 },
+  { type:'line',   p0:PB2.c1,   p2:PB2.shoot,                col:'#22d3ee', state:'RET 1', turretDeg:45  },
+  { type:'line',   p0:PB2.shoot, p2:PB2.c2,                  col:'#06b6d4', state:'COL 2', turretDeg:225 },
+  { type:'line',   p0:PB2.c2,   p2:PB2.shoot,                col:'#22d3ee', state:'RET 2', turretDeg:45  },
+  { type:'line',   p0:PB2.shoot, p2:PB2.c2,                  col:'#06b6d4', state:'COL 3', turretDeg:225 },
+  { type:'line',   p0:PB2.c2,   p2:PB2.shoot,                col:'#22d3ee', state:'RET 3', turretDeg:45  },
+  { type:'line',   p0:PB2.shoot, p2:PB2.park,                col:'#0e7490', state:'PARK',  turretDeg:270 },
 ];
 const WP_B2 = [
   { p: PB2.start, label:'START', col:'#ffc516' },
@@ -573,6 +573,33 @@ const WP_B2 = [
   { p: PB2.c1,    label:'#1',    col:'#06b6d4' },
   { p: PB2.c2,    label:'#2',    col:'#06b6d4' },
   { p: PB2.park,  label:'PARK',  col:'#0e7490' },
+];
+
+// ── AUTO RED 2 PATH DATA ─────────────────────────────────────────────
+// Mirror of AutoBlue2 (x_red = 141.5 – x_blue, heading 180°→0°)
+const PR2 = {
+  start:  { x: 81.28,  y: 127.4,  deg: 270 },
+  shoot:  { x: 81.28,  y: 127.4,  deg: 270 },
+  ctrl1:  { x: 85.17,  y: 105.46, deg: 0   },
+  c1:     { x: 125.06, y: 109.64, deg: 0   },
+  c2:     { x: 130.5,  y: 132,    deg: 0   },
+  park:   { x: 81.56,  y: 117.92, deg: 270 },
+};
+const SEGS_R2 = [
+  { type:'bezier', p0:PR2.shoot, p1:PR2.ctrl1, p2:PR2.c1,    col:'#f97316', state:'COL 1', turretDeg:0   },
+  { type:'line',   p0:PR2.c1,   p2:PR2.shoot,                col:'#fb923c', state:'RET 1', turretDeg:135 },
+  { type:'line',   p0:PR2.shoot, p2:PR2.c2,                  col:'#f97316', state:'COL 2', turretDeg:0   },
+  { type:'line',   p0:PR2.c2,   p2:PR2.shoot,                col:'#fb923c', state:'RET 2', turretDeg:135 },
+  { type:'line',   p0:PR2.shoot, p2:PR2.c2,                  col:'#f97316', state:'COL 3', turretDeg:0   },
+  { type:'line',   p0:PR2.c2,   p2:PR2.shoot,                col:'#fb923c', state:'RET 3', turretDeg:135 },
+  { type:'line',   p0:PR2.shoot, p2:PR2.park,                col:'#c2410c', state:'PARK',  turretDeg:270 },
+];
+const WP_R2 = [
+  { p: PR2.start, label:'START', col:'#ffc516' },
+  { p: PR2.shoot, label:'SHOOT', col:'#ef4444' },
+  { p: PR2.c1,    label:'#1',    col:'#f97316' },
+  { p: PR2.c2,    label:'#2',    col:'#f97316' },
+  { p: PR2.park,  label:'PARK',  col:'#c2410c' },
 ];
 
 function lerpAutoPoly(t) {
@@ -943,207 +970,10 @@ function TeamMember({ m, i }) {
 // ── PEDRO TABS DATA ───────────────────────────────────────────────────
 const AUTO_TABS = [
   { key:'red',   label:'AutoRed',   badge:'5 shot · 12 сег', segs:AUTO_SEGMENTS, waypoints:FIELD_WAYPOINTS, border:'#f472b6' },
+  { key:'red2',  label:'AutoRed2',  badge:'4 shot · 7 сег',  segs:SEGS_R2,       waypoints:WP_R2,           border:'#f97316' },
   { key:'blue',  label:'AutoBlue',  badge:'5 shot · 12 сег', segs:SEGS_BLUE,     waypoints:WP_BLUE,         border:'#3b82f6' },
-  { key:'blue2', label:'AutoBlue2', badge:'4 shot · 8 сег',  segs:SEGS_B2,       waypoints:WP_B2,           border:'#06b6d4' },
+  { key:'blue2', label:'AutoBlue2', badge:'4 shot · 7 сег',  segs:SEGS_B2,       waypoints:WP_B2,           border:'#06b6d4' },
 ];
-
-// ── PEDRO PATHING VISUALIZER ──────────────────────────────────────────
-// Unique bezier segments for control-point rendering (deduplicated by p1 reference)
-const BEZIER_CTRL_SEGS = AUTO_SEGMENTS
-  .filter(s => s.type === 'bezier' && s.p1)
-  .filter((s, i, arr) => arr.findIndex(x => x.p1 === s.p1) === i);
-
-function PedroVisualizer() {
-  const t = useT();
-  const [running, setRunning] = useState(true);
-  const [prog, setProg]       = useState(0);
-  const progRef               = useRef(0);
-  const visibleRef            = useRef(false);
-  const pedroRef              = useRef(null);
-
-  useEffect(() => {
-    const obs = new IntersectionObserver(([e]) => { visibleRef.current = e.isIntersecting; }, { threshold: 0.05 });
-    if (pedroRef.current) obs.observe(pedroRef.current);
-    return () => obs.disconnect();
-  }, []);
-
-  useEffect(() => {
-    let raf, last = 0;
-    const tick = ts => {
-      if (running && visibleRef.current) {
-        if (last) { progRef.current = (progRef.current + (ts - last) / 18000) % 1; setProg(progRef.current); }
-        last = ts;
-      } else { last = 0; }
-      raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [running]);
-
-  const bot  = useMemo(() => lerpAutoPoly(prog), [prog]);
-  const half = ROBOT_PX / 2;
-  const seg  = AUTO_SEGMENTS[bot?.segIdx ?? 0];
-
-  const inX = bot ? (bot.sx / SZ * FIELD).toFixed(2) : "0.00";
-  const inY = bot ? ((SZ - bot.sy) / SZ * FIELD).toFixed(2) : "0.00";
-  const hdg = bot ? bot.hdeg.toFixed(1) : "0.0";
-
-  const sliderVal = Math.round(prog * 1000);
-
-  return (
-    <motion.div
-      ref={pedroRef}
-      className="pedro"
-      initial={{ opacity: 0, y: 26 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.1 }}
-      transition={{ duration: 0.6 }}
-    >
-      <div className="pedro__header">
-        <div>
-          <span className="eyebrow">Pedro Pathing</span>
-          <h3>Auto Field Visualizer</h3>
-          <p>{t("pedro.sub")}</p>
-        </div>
-        <div className="pedro__legend">
-          <span><i className="dot" style={{background:'#a855f7'}}/>Collect</span>
-          <span><i className="dot" style={{background:'#f472b6'}}/>Return</span>
-          <span><i className="dot" style={{background:'#ffc516'}}/>Start</span>
-          <span><i style={{display:'inline-block',width:8,height:8,background:'rgba(255,197,22,.7)',border:'1.5px solid #ffc516',transform:'rotate(45deg)',marginRight:4}}/>Ctrl</span>
-        </div>
-      </div>
-
-      <div className="pedro__field">
-        <svg viewBox={`0 0 ${SZ} ${SZ}`} className="pedro__svg">
-          <defs>
-            <pattern id="robotHatch" patternUnits="userSpaceOnUse" width="10" height="10"
-              patternTransform="rotate(45 0 0)">
-              <line x1="0" y1="0" x2="0" y2="10" stroke="#f472b6" strokeWidth="2" strokeOpacity="0.65"/>
-            </pattern>
-            <clipPath id="robotClip">
-              <rect x={-half} y={-half} width={ROBOT_PX} height={ROBOT_PX} rx="3"/>
-            </clipPath>
-            <filter id="glowBot" x="-30%" y="-30%" width="160%" height="160%">
-              <feGaussianBlur stdDeviation="4" result="b"/>
-              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-            </filter>
-            <filter id="glowLine" x="-10%" y="-10%" width="120%" height="120%">
-              <feGaussianBlur stdDeviation="2.5" result="b"/>
-              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-            </filter>
-          </defs>
-
-          <image href="/decode.webp" x="0" y="0" width={SZ} height={SZ}/>
-
-          {/* Path segments */}
-          {AUTO_SEGMENTS.map((s, i) => (
-            <g key={i}>
-              <path d={segD(s)} fill="none" stroke={s.col} strokeWidth="22" strokeOpacity="0.13"
-                strokeLinecap="round" strokeLinejoin="round"/>
-              <path d={segD(s)} fill="none" stroke={s.col} strokeWidth="2.5"
-                strokeLinecap="round" strokeLinejoin="round" filter="url(#glowLine)"/>
-            </g>
-          ))}
-
-          {/* Bezier control point handles */}
-          {BEZIER_CTRL_SEGS.map((s, i) => {
-            const sp0 = psvg(s.p0), sp1 = psvg(s.p1), sp2 = psvg(s.p2);
-            return (
-              <g key={`ctrl-${i}`}>
-                <line x1={sp0.sx} y1={sp0.sy} x2={sp1.sx} y2={sp1.sy}
-                  stroke="#ffc516" strokeWidth="1" strokeDasharray="4,3" strokeOpacity="0.45"/>
-                <line x1={sp2.sx} y1={sp2.sy} x2={sp1.sx} y2={sp1.sy}
-                  stroke="#ffc516" strokeWidth="1" strokeDasharray="4,3" strokeOpacity="0.45"/>
-                <rect
-                  x={sp1.sx - 5} y={sp1.sy - 5} width="10" height="10"
-                  fill="rgba(255,197,22,.18)" stroke="#ffc516" strokeWidth="1.5"
-                  transform={`rotate(45 ${sp1.sx} ${sp1.sy})`}
-                />
-              </g>
-            );
-          })}
-
-          {/* Key waypoint dots + labels */}
-          {FIELD_WAYPOINTS.map((wp, i) => {
-            const { sx: wx, sy: wy } = psvg(wp.p);
-            return (
-              <g key={i}>
-                <circle cx={wx} cy={wy} r="10" fill={wp.col} fillOpacity="0.18"/>
-                <circle cx={wx} cy={wy} r="5"  fill={wp.col}/>
-                <circle cx={wx} cy={wy} r="10" fill="none" stroke={wp.col} strokeWidth="1.5" strokeOpacity="0.6"/>
-                <text x={wx} y={wy - 13} textAnchor="middle"
-                  fill="#fff" fontSize="9" fontWeight="700" fontFamily="monospace"
-                  stroke="rgba(0,0,0,0.85)" strokeWidth="3" paintOrder="stroke">
-                  {wp.label}
-                </text>
-              </g>
-            );
-          })}
-
-          {/* Animated robot — rotation by heading (-hdeg converts field→SVG) */}
-          {bot && (
-            <g transform={`translate(${bot.sx},${bot.sy}) rotate(${-bot.hdeg})`}
-               filter="url(#glowBot)">
-              <rect x={-half} y={-half} width={ROBOT_PX} height={ROBOT_PX} rx="3"
-                fill="url(#robotHatch)" clipPath="url(#robotClip)"/>
-              <rect x={-half} y={-half} width={ROBOT_PX} height={ROBOT_PX} rx="3"
-                fill="none" stroke="#f472b6" strokeWidth="3"/>
-              <circle cx="0" cy="0" r="5" fill="#ffc516"/>
-              {/* Heading arrow (robot "front") */}
-              <line x1="0" y1="0" x2={half + 6} y2="0" stroke="#fff" strokeWidth="1.5" strokeOpacity="0.9"/>
-              <polygon points={`${half+6},-3.5 ${half+13},0 ${half+6},3.5`} fill="#fff" fillOpacity="0.9"/>
-            </g>
-          )}
-        </svg>
-      </div>
-
-      {/* Controls */}
-      <div className="pedro__controls">
-        <button className="ctrl-btn" onClick={() => setRunning(v => !v)}>
-          {running ? <Pause size={14}/> : <Play size={14}/>} {running ? t("btn.pause") : t("btn.play")}
-        </button>
-        <button className="ctrl-btn" onClick={() => { progRef.current = 0; setProg(0); setRunning(true); }}>
-          <RotateCcw size={14}/> {t("btn.restart")}
-        </button>
-      </div>
-
-      {/* Scrub slider */}
-      <div className="pedro__scrub">
-        <span className="scrub-label">Жол</span>
-        <input
-          type="range"
-          min="0"
-          max="1000"
-          step="1"
-          value={sliderVal}
-          className="scrub-slider"
-          style={{ '--val': `${(prog * 100).toFixed(1)}%` }}
-          onChange={e => {
-            const v = Number(e.target.value) / 1000;
-            progRef.current = v;
-            setProg(v);
-          }}
-          onMouseDown={() => setRunning(false)}
-          onTouchStart={() => setRunning(false)}
-        />
-        <span className="scrub-pct">{Math.round(prog * 100)}%</span>
-      </div>
-
-      <div className="pedro__stats">
-        {[
-          ["X (in)", inX],
-          ["Y (in)", inY],
-          ["Heading", `${hdg}°`],
-          ["State", seg?.state ?? "—"],
-        ].map(([k, v]) => (
-          <div key={k} className="pstat">
-            <span>{k}</span><strong>{v}</strong>
-          </div>
-        ))}
-      </div>
-    </motion.div>
-  );
-}
 
 // ── PEDRO VISUALIZER (Generic) ────────────────────────────────────────
 function PedroVisualizerGen({ segs, waypoints, title, subtitle, uid, robotBorder = '#3b82f6' }) {
@@ -1184,15 +1014,16 @@ function PedroVisualizerGen({ segs, waypoints, title, subtitle, uid, robotBorder
     return () => cancelAnimationFrame(raf);
   }, [running]);
 
-  const bot  = useMemo(() => lerpPolyFor(poly, dist, prog), [poly, dist, prog]);
-  const half = ROBOT_PX / 2;
-  const seg  = segs[bot?.segIdx ?? 0];
-  const inX  = bot ? (bot.sx / SZ * FIELD).toFixed(2) : "0.00";
-  const inY  = bot ? ((SZ - bot.sy) / SZ * FIELD).toFixed(2) : "0.00";
-  const hdg  = bot ? bot.hdeg.toFixed(1) : "0.0";
-  const sliderVal = Math.round(prog * 1000);
+  const bot        = useMemo(() => lerpPolyFor(poly, dist, prog), [poly, dist, prog]);
+  const half       = ROBOT_PX / 2;
+  const seg        = segs[bot?.segIdx ?? 0];
+  const turretDeg  = seg?.turretDeg ?? 0;
+  const inX        = bot ? (bot.sx / SZ * FIELD).toFixed(2) : "0.00";
+  const inY        = bot ? ((SZ - bot.sy) / SZ * FIELD).toFixed(2) : "0.00";
+  const hdg        = bot ? bot.hdeg.toFixed(1) : "0.0";
+  const sliderVal  = Math.round(prog * 1000);
 
-  const ids = { hatch:`rH-${uid}`, clip:`rC-${uid}`, gBot:`gB-${uid}`, gLn:`gL-${uid}` };
+  const ids = { hatch:`rH-${uid}`, clip:`rC-${uid}`, gBot:`gB-${uid}`, gLn:`gL-${uid}`, gTur:`gT-${uid}` };
 
   return (
     <motion.div ref={wrapRef} className="pedro"
@@ -1208,7 +1039,7 @@ function PedroVisualizerGen({ segs, waypoints, title, subtitle, uid, robotBorder
           <span><i className="dot" style={{background: robotBorder}}/>Collect</span>
           <span><i className="dot" style={{background:'#93c5fd'}}/>Return</span>
           <span><i className="dot" style={{background:'#ffc516'}}/>Start</span>
-          <span><i style={{display:'inline-block',width:8,height:8,background:'rgba(255,197,22,.7)',border:'1.5px solid #ffc516',transform:'rotate(45deg)',marginRight:4}}/>Ctrl</span>
+          <span><i className="dot" style={{background:'#22d3ee'}}/>Turrel</span>
         </div>
       </div>
 
@@ -1227,6 +1058,10 @@ function PedroVisualizerGen({ segs, waypoints, title, subtitle, uid, robotBorder
             </filter>
             <filter id={ids.gLn} x="-10%" y="-10%" width="120%" height="120%">
               <feGaussianBlur stdDeviation="2.5" result="b"/>
+              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+            <filter id={ids.gTur} x="-40%" y="-40%" width="180%" height="180%">
+              <feGaussianBlur stdDeviation="3" result="b"/>
               <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
             </filter>
           </defs>
@@ -1267,13 +1102,22 @@ function PedroVisualizerGen({ segs, waypoints, title, subtitle, uid, robotBorder
           })}
 
           {bot && (
-            <g transform={`translate(${bot.sx},${bot.sy}) rotate(${-bot.hdeg})`} filter={`url(#${ids.gBot})`}>
-              <rect x={-half} y={-half} width={ROBOT_PX} height={ROBOT_PX} rx="3" fill={`url(#${ids.hatch})`} clipPath={`url(#${ids.clip})`}/>
-              <rect x={-half} y={-half} width={ROBOT_PX} height={ROBOT_PX} rx="3" fill="none" stroke={robotBorder} strokeWidth="3"/>
-              <circle cx="0" cy="0" r="5" fill="#ffc516"/>
-              <line x1="0" y1="0" x2={half+6} y2="0" stroke="#fff" strokeWidth="1.5" strokeOpacity="0.9"/>
-              <polygon points={`${half+6},-3.5 ${half+13},0 ${half+6},3.5`} fill="#fff" fillOpacity="0.9"/>
-            </g>
+            <>
+              {/* Robot body — rotates with robot heading */}
+              <g transform={`translate(${bot.sx},${bot.sy}) rotate(${-bot.hdeg})`} filter={`url(#${ids.gBot})`}>
+                <rect x={-half} y={-half} width={ROBOT_PX} height={ROBOT_PX} rx="3" fill={`url(#${ids.hatch})`} clipPath={`url(#${ids.clip})`}/>
+                <rect x={-half} y={-half} width={ROBOT_PX} height={ROBOT_PX} rx="3" fill="none" stroke={robotBorder} strokeWidth="3"/>
+                <circle cx="0" cy="0" r="5" fill="#ffc516"/>
+                <line x1="0" y1="0" x2={half+6} y2="0" stroke="#fff" strokeWidth="1.5" strokeOpacity="0.9"/>
+                <polygon points={`${half+6},-3.5 ${half+13},0 ${half+6},3.5`} fill="#fff" fillOpacity="0.9"/>
+              </g>
+              {/* Turrel arm — rotates independently (field-absolute angle) */}
+              <g transform={`translate(${bot.sx},${bot.sy}) rotate(${-turretDeg})`} filter={`url(#${ids.gTur})`}>
+                <line x1="0" y1="0" x2={half+11} y2="0" stroke="#22d3ee" strokeWidth="2.5" strokeOpacity="0.92" strokeLinecap="round"/>
+                <circle cx={half+11} cy="0" r="3.5" fill="#22d3ee" fillOpacity="0.92"/>
+                <circle cx="0" cy="0" r="3" fill="none" stroke="#22d3ee" strokeWidth="1.5" strokeOpacity="0.6"/>
+              </g>
+            </>
           )}
         </svg>
       </div>
@@ -1297,7 +1141,7 @@ function PedroVisualizerGen({ segs, waypoints, title, subtitle, uid, robotBorder
       </div>
 
       <div className="pedro__stats">
-        {[["X (in)", inX],["Y (in)", inY],["Heading", `${hdg}°`],["State", seg?.state ?? "—"]].map(([k,v]) => (
+        {[["X (in)", inX],["Y (in)", inY],["Heading", `${hdg}°`],["Turrel", `${turretDeg}°`],["State", seg?.state ?? "—"]].map(([k,v]) => (
           <div key={k} className="pstat"><span>{k}</span><strong>{v}</strong></div>
         ))}
       </div>
