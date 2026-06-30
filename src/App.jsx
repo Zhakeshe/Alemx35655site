@@ -2185,19 +2185,112 @@ function FTCScoutPage({ onClose }) {
 }
 
 // ── TECH CUP PAGE ─────────────────────────────────────────────────────
-const TC_TABS = [
-  { key: "teams" },
-  { key: "judging" },
-  { key: "schedule" },
-  { key: "search" },
-  { key: "live" },
-  { key: "fll" },
-  { key: "chat", label: "💬 Чат" },
+
+// Normalize team name for fuzzy search
+const fllNorm = s => s.toLowerCase().replace(/[\s\-\/\.]+/g, "");
+
+// ── FLL Robot Game schedule (30 June & 1 July) ────────────────────────
+const FLL_GAME_SLOTS = [
+  { day:"30.06", rnd:"train1",   time:"11:30–11:40", f:["SAMURYQ","218-Qstem","ENDER FORCE","Heroes of Olympus","Lion Tech","Barni"] },
+  { day:"30.06", rnd:"train1",   time:"11:40–11:50", f:["SilkWayBots","Sirius","FiftyOne Teams Semey","Tengri","QBIS_ALASH","EVA 01"] },
+  { day:"30.06", rnd:"train1",   time:"11:50–12:00", f:["StarDust","Yassi","AquaTech","ApxeoQazaq","GEAR UP","Nova"] },
+  { day:"30.06", rnd:"train1",   time:"12:00–12:10", f:["INSPIRO","Tolebi Daryn","Robospark213","SlapSeals","i-Stars","Daryn Dynamics"] },
+  { day:"30.06", rnd:"train1",   time:"12:10–12:20", f:["Lv 3000","Nova Astqyz","Zytron","AMOR","Qazygurt","KAZBOTS"] },
+  { day:"30.06", rnd:"train1",   time:"12:20–12:30", f:["Farabi Robotics","PEAK","RUH","33TurRobotics / 311608","Mf squad","Sunkar-q"] },
+  { day:"30.06", rnd:"train1",   time:"12:30–12:40", f:["Flashforce","Uhud Robotics","Silicon Steppe","A.T.O.M","Tulpar","Mandoki Robotics"] },
+  { day:"30.06", rnd:"train1",   time:"12:40–12:50", f:["Infinite Intelligence","imperium","","","",""] },
+  { day:"30.06", rnd:"train2",   time:"14:00–14:10", f:["Robospark213","i-Stars","Uhud Robotics","Flashforce","ApxeoQazaq","Tulpar"] },
+  { day:"30.06", rnd:"train2",   time:"14:10–14:20", f:["PEAK","Silicon Steppe","StarDust","Lion Tech","Sunkar-q","Zytron"] },
+  { day:"30.06", rnd:"train2",   time:"14:20–14:30", f:["33TurRobotics / 311608","ENDER FORCE","Mf squad","Lv 3000","SilkWayBots","Infinite Intelligence"] },
+  { day:"30.06", rnd:"train2",   time:"14:30–14:40", f:["Qazygurt","GEAR UP","QBIS_ALASH","Nova Astqyz","Nova","A.T.O.M"] },
+  { day:"30.06", rnd:"train2",   time:"14:40–14:50", f:["RUH","Farabi Robotics","Tengri","SAMURYQ","imperium","AquaTech"] },
+  { day:"30.06", rnd:"train2",   time:"14:50–15:00", f:["Mandoki Robotics","Heroes of Olympus","EVA 01","Daryn Dynamics","Yassi","FiftyOne Teams Semey"] },
+  { day:"30.06", rnd:"train2",   time:"15:00–15:10", f:["Sirius","KAZBOTS","218-Qstem","Barni","INSPIRO","SlapSeals"] },
+  { day:"30.06", rnd:"train2",   time:"15:10–15:20", f:["Tolebi Daryn","AMOR","","","",""] },
+  { day:"30.06", rnd:"official1",time:"15:40–15:50", f:["KAZBOTS","33TurRobotics / 311608","Sirius","Zytron","SlapSeals","PEAK"] },
+  { day:"30.06", rnd:"official1",time:"15:50–16:00", f:["A.T.O.M","Barni","Heroes of Olympus","GEAR UP","Uhud Robotics","INSPIRO"] },
+  { day:"30.06", rnd:"official1",time:"16:00–16:10", f:["Silicon Steppe","Robospark213","Daryn Dynamics","FiftyOne Teams Semey","Tengri","SAMURYQ"] },
+  { day:"30.06", rnd:"official1",time:"16:10–16:20", f:["218-Qstem","StarDust","Flashforce","Sunkar-q","RUH","AMOR"] },
+  { day:"30.06", rnd:"official1",time:"16:20–16:30", f:["Nova","SilkWayBots","Mandoki Robotics","Yassi","Infinite Intelligence","Lion Tech"] },
+  { day:"30.06", rnd:"official1",time:"16:30–16:40", f:["ENDER FORCE","Qazygurt","ApxeoQazaq","Tolebi Daryn","AquaTech","Lv 3000"] },
+  { day:"30.06", rnd:"official1",time:"16:40–16:50", f:["Nova Astqyz","EVA 01","imperium","i-Stars","Farabi Robotics","Mf squad"] },
+  { day:"30.06", rnd:"official1",time:"16:50–17:00", f:["QBIS_ALASH","Tulpar","","","",""] },
+  { day:"01.07", rnd:"official2",time:"10:30–10:40", f:["FiftyOne Teams Semey","INSPIRO","Infinite Intelligence","EVA 01","AMOR","Qazygurt"] },
+  { day:"01.07", rnd:"official2",time:"10:40–10:50", f:["i-Stars","Mf squad","Farabi Robotics","Robospark213","Flashforce","Nova Astqyz"] },
+  { day:"01.07", rnd:"official2",time:"10:50–11:00", f:["Sunkar-q","Zytron","Barni","RUH","KAZBOTS","QBIS_ALASH"] },
+  { day:"01.07", rnd:"official2",time:"11:00–11:10", f:["AquaTech","Lion Tech","Lv 3000","imperium","PEAK","Sirius"] },
+  { day:"01.07", rnd:"official2",time:"11:10–11:20", f:["Heroes of Olympus","ApxeoQazaq","Tulpar","218-Qstem","Tolebi Daryn","StarDust"] },
+  { day:"01.07", rnd:"official2",time:"11:20–11:30", f:["Uhud Robotics","SAMURYQ","GEAR UP","SilkWayBots","A.T.O.M","Silicon Steppe"] },
+  { day:"01.07", rnd:"official2",time:"11:30–11:40", f:["Daryn Dynamics","Tengri","Nova","ENDER FORCE","33TurRobotics / 311608","Yassi"] },
+  { day:"01.07", rnd:"official2",time:"11:40–11:50", f:["SlapSeals","Mandoki Robotics","","","",""] },
+  { day:"01.07", rnd:"official3",time:"12:00–12:10", f:["Tengri","QBIS_ALASH","Sunkar-q","AquaTech","Daryn Dynamics","RUH"] },
+  { day:"01.07", rnd:"official3",time:"12:10–12:20", f:["Yassi","Lv 3000","AMOR","Mandoki Robotics","ENDER FORCE","ApxeoQazaq"] },
+  { day:"01.07", rnd:"official3",time:"12:20–12:30", f:["imperium","SlapSeals","PEAK","Farabi Robotics","Heroes of Olympus","i-Stars"] },
+  { day:"01.07", rnd:"official3",time:"12:30–12:40", f:["Tulpar","Infinite Intelligence","33TurRobotics / 311608","Mf squad","Silicon Steppe","SilkWayBots"] },
+  { day:"01.07", rnd:"official3",time:"12:40–12:50", f:["Barni","A.T.O.M","INSPIRO","Sirius","EVA 01","Uhud Robotics"] },
+  { day:"01.07", rnd:"official3",time:"12:50–13:00", f:["Zytron","Flashforce","KAZBOTS","StarDust","Nova Astqyz","218-Qstem"] },
+  { day:"01.07", rnd:"official3",time:"13:00–13:10", f:["GEAR UP","FiftyOne Teams Semey","SAMURYQ","Qazygurt","Robospark213","Tolebi Daryn"] },
+  { day:"01.07", rnd:"official3",time:"13:10–13:20", f:["Lion Tech","Nova","","","",""] },
 ];
 
-// YouTube stream URLs — replace with actual links when ready
-const TC_LIVE_URL = "";
-const TC_FLL_URL  = "";
+// ── FLL Judging ───────────────────────────────────────────────────────
+const FLL_JUDGING = [
+  { day:"30.06", time:"11:30–12:10", r:{1:"RUH",2:"Mandoki Robotics",3:"imperium",4:"PEAK"} },
+  { day:"30.06", time:"12:10–12:50", r:{1:"FiftyOne Teams Semey",2:"GEAR UP",3:"ENDER FORCE",4:"Barni"} },
+  { day:"30.06", time:"14:00–14:40", r:{1:"EVA 01",2:"Tolebi Daryn",3:"Heroes of Olympus",4:"Yassi"} },
+  { day:"30.06", time:"14:40–15:20", r:{1:"Sunkar-q",2:"33TurRobotics / 311608",3:"Mf squad",4:"Silicon Steppe"} },
+  { day:"30.06", time:"15:20–16:00", r:{1:"StarDust",2:"Lv 3000",3:"Farabi Robotics",4:"ApxeoQazaq"} },
+  { day:"30.06", time:"16:00–16:40", r:{1:"Sirius",2:"KAZBOTS",3:"Zytron",4:"Tulpar"} },
+  { day:"01.07", time:"10:20–11:00", r:{1:"SlapSeals",2:"218-Qstem",3:"SAMURYQ",4:"A.T.O.M"} },
+  { day:"01.07", time:"11:00–11:40", r:{1:"AMOR",2:"i-Stars",3:"Flashforce",4:"Qazygurt"} },
+  { day:"01.07", time:"11:40–12:20", r:{1:"INSPIRO",2:"Infinite Intelligence",3:"SilkWayBots",4:"Nova Astqyz"} },
+  { day:"01.07", time:"12:20–13:00", r:{1:"Nova",2:"AquaTech",3:"Lion Tech",4:"Daryn Dynamics"} },
+  { day:"01.07", time:"14:00–14:40", r:{1:"QBIS_ALASH",2:"Tengri",3:"Robospark213",4:"Uhud Robotics"} },
+];
+
+// ── FLL Explore Judging (30 June only) ───────────────────────────────
+const EXPLORE_JUDGING = [
+  { time:"12:00–12:20", r:{1:"Zhas Qyran 159",2:"PEAK",3:"Altun kids",4:"Saturn"} },
+  { time:"12:30–12:50", r:{1:"Smart Sisters",2:"TechnoKids",3:"Future Axions 218",4:"Bad guys"} },
+  { time:"14:00–14:20", r:{1:"Super Mario",2:"LionTech",3:"Ikigai",4:"Bolashaq"} },
+  { time:"14:30–14:50", r:{1:"Archeology x",2:"Cosmo pixels",3:"ABAI TEAM",4:"KELESHEK INNOVATORS"} },
+  { time:"15:00–15:20", r:{1:"OtAi",2:"RoboKids Merke",3:"KoneTech",4:"TurAndroid / 211626"} },
+  { time:"15:30–15:50", r:{1:"",2:"Digital Nomads",3:"Galaxy",4:"Kaido"} },
+];
+
+// ── FLL Explore Pit Numbers ───────────────────────────────────────────
+const EXPLORE_PITS = [
+  {pit:1,team:"Future Axions 218"},{pit:2,team:"OtAi"},{pit:3,team:"Saturn"},
+  {pit:4,team:"TurAndroid / 211626"},{pit:5,team:"KELESHEK INNOVATORS"},{pit:6,team:"PEAK"},
+  {pit:7,team:"Bad guys"},{pit:8,team:"Digital Nomads"},{pit:9,team:"Zhas Qyran 159"},
+  {pit:10,team:"RoboKids Merke"},{pit:11,team:"Altun kids"},{pit:12,team:"Bolashaq"},
+  {pit:13,team:"Super Mario"},{pit:14,team:"LionTech"},{pit:15,team:"Smart Sisters"},
+  {pit:16,team:"ABAI TEAM"},{pit:17,team:"TechnoKids"},{pit:18,team:"KoneTech"},
+  {pit:19,team:"Archeology x"},{pit:20,team:"Ikigai"},{pit:21,team:"Cosmo pixels"},
+  {pit:22,team:"Galaxy"},{pit:23,team:"Kaido"},
+];
+
+const FLL_RND = {
+  train1:    {kz:"Жаттығу 1",    ru:"Трен. матч 1",  en:"Train 1"},
+  train2:    {kz:"Жаттығу 2",    ru:"Трен. матч 2",  en:"Train 2"},
+  official1: {kz:"Ресми матч 1", ru:"Офиц. матч 1",  en:"Official 1"},
+  official2: {kz:"Ресми матч 2", ru:"Офиц. матч 2",  en:"Official 2"},
+  official3: {kz:"Ресми матч 3", ru:"Офиц. матч 3",  en:"Official 3"},
+};
+
+// FTC Streams — fill URLs when ready
+const FTC_STREAM1_URL = "";
+const FTC_STREAM2_URL = "";
+// Rules page video — fill URL when ready
+const TC_RULES_VIDEO_URL = "";
+
+const TC_TABS = [
+  { key:"fll" },
+  { key:"explore", label:"FLL Explore" },
+  { key:"ftc",     label:"FTC" },
+  { key:"rules" },
+  { key:"chat",    label:"💬 Чат" },
+];
 
 function tcEmbedUrl(raw) {
   const m = raw.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|live\/))([^?&\s]+)/);
@@ -2205,50 +2298,480 @@ function tcEmbedUrl(raw) {
   return `https://www.youtube.com/embed/${id}?autoplay=1&mute=1&rel=0&modestbranding=1`;
 }
 
-function TechCupEmbed({ title, url, t }) {
-  if (!url) return (
-    <div className="tc-embed-soon">
-      <span className="tc-embed-soon__label">{title}</span>
-      <p className="tc-embed-soon__msg">{t("tc.stream.soon")}</p>
+// ── FLL TEAM SEARCH ───────────────────────────────────────────────────
+function FLLTeamSearch() {
+  const { lang } = useLang();
+  const [query, setQuery] = useState("");
+  const qn = useMemo(() => fllNorm(query), [query]);
+
+  const gameHits = useMemo(() => {
+    if (!qn) return [];
+    return FLL_GAME_SLOTS.map(slot => {
+      const matched = slot.f.reduce((acc, tm, i) => {
+        if (tm && fllNorm(tm).includes(qn)) acc.push(i + 1);
+        return acc;
+      }, []);
+      return matched.length ? { ...slot, matched } : null;
+    }).filter(Boolean);
+  }, [qn]);
+
+  const judgeHits = useMemo(() => {
+    if (!qn) return [];
+    return FLL_JUDGING.map(slot => {
+      const matched = Object.entries(slot.r)
+        .filter(([, tm]) => tm && fllNorm(tm).includes(qn))
+        .map(([room]) => room);
+      return matched.length ? { ...slot, matched } : null;
+    }).filter(Boolean);
+  }, [qn]);
+
+  const ph   = lang==="kz" ? "Команда атын іздеу..." : lang==="ru" ? "Поиск команды..." : "Search team...";
+  const hint = lang==="kz" ? "Команда атын жазыңыз — ойын уақыты мен бағалау кестесі шығады"
+             : lang==="ru" ? "Введите название команды — увидите расписание игр и судейства"
+             : "Type a team name to see their game and judging schedule";
+  const lblG  = lang==="kz" ? "🤖 Робот Ойыны" : "🤖 Robot Game";
+  const lblJ  = lang==="kz" ? "🏆 Бағалау" : lang==="ru" ? "🏆 Судейство" : "🏆 Judging";
+  const lblF  = lang==="kz" ? "Алаң" : lang==="ru" ? "Поле" : "Field";
+  const lblR  = lang==="kz" ? "Бөлме" : lang==="ru" ? "Комната" : "Room";
+  const lblNF = lang==="kz" ? "Команда табылмады" : lang==="ru" ? "Команда не найдена" : "Team not found";
+
+  return (
+    <div className="fll-search-wrap">
+      <div className="tc-search-bar fll-search-bar">
+        <svg className="tc-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input className="tc-search-input fll-input" type="text" placeholder={ph}
+          value={query} onChange={e => setQuery(e.target.value)} autoComplete="off" spellCheck={false} />
+      </div>
+      {!query && <div className="fll-search-hint">{hint}</div>}
+      {query && (
+        <AnimatePresence mode="wait">
+          <motion.div key={qn||"_"} initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} exit={{opacity:0}} transition={{duration:0.2}}>
+            {gameHits.length === 0 && judgeHits.length === 0
+              ? <div className="fll-not-found">{lblNF}</div>
+              : (
+                <div className="fll-hits">
+                  {gameHits.length > 0 && (
+                    <div className="fll-hit-section">
+                      <div className="fll-hit-section-title">{lblG}</div>
+                      {gameHits.map((slot, i) => (
+                        <div key={i} className="fll-hit-card fll-hit-card--game">
+                          <div className="fll-hit-left">
+                            <div className="fll-hit-time">{slot.time}</div>
+                            <div className="fll-hit-day">{slot.day}</div>
+                          </div>
+                          <div className="fll-hit-right">
+                            <div className="fll-hit-round">{FLL_RND[slot.rnd]?.[lang] ?? slot.rnd}</div>
+                            {slot.matched.map(fn => (
+                              <div key={fn} className="fll-hit-field">{lblF} {fn} · <strong>{slot.f[fn-1]}</strong></div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {judgeHits.length > 0 && (
+                    <div className="fll-hit-section">
+                      <div className="fll-hit-section-title">{lblJ}</div>
+                      {judgeHits.map((slot, i) => (
+                        <div key={i} className="fll-hit-card fll-hit-card--judge">
+                          <div className="fll-hit-left">
+                            <div className="fll-hit-time">{slot.time}</div>
+                            <div className="fll-hit-day">{slot.day}</div>
+                          </div>
+                          <div className="fll-hit-right">
+                            {slot.matched.map(rn => (
+                              <div key={rn} className="fll-hit-field">{lblR} {rn} · <strong>{slot.r[rn]}</strong></div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
+            }
+          </motion.div>
+        </AnimatePresence>
+      )}
     </div>
   );
+}
+
+// ── EXPLORE TEAM SEARCH ───────────────────────────────────────────────
+function ExploreTeamSearch() {
+  const { lang } = useLang();
+  const [query, setQuery] = useState("");
+  const qn = useMemo(() => fllNorm(query), [query]);
+
+  const judgeHits = useMemo(() => {
+    if (!qn) return [];
+    return EXPLORE_JUDGING.map(slot => {
+      const matched = Object.entries(slot.r)
+        .filter(([, tm]) => tm && fllNorm(tm).includes(qn))
+        .map(([room]) => room);
+      return matched.length ? { ...slot, matched } : null;
+    }).filter(Boolean);
+  }, [qn]);
+
+  const pitHit = useMemo(() => {
+    if (!qn) return null;
+    return EXPLORE_PITS.find(p => fllNorm(p.team).includes(qn)) ?? null;
+  }, [qn]);
+
+  const ph   = lang==="kz" ? "Команда атын іздеу..." : lang==="ru" ? "Поиск команды..." : "Search team...";
+  const hint = lang==="kz" ? "Команда атын жазыңыз — бағалау уақыты мен пит нөмірі шығады"
+             : lang==="ru" ? "Введите название команды — увидите время судейства и номер пита"
+             : "Type a team name to see their judging time and pit number";
+  const lblJ  = lang==="kz" ? "🏆 Бағалау" : lang==="ru" ? "🏆 Судейство" : "🏆 Judging";
+  const lblP  = lang==="kz" ? "📍 Пит нөмірі" : lang==="ru" ? "📍 Пит номер" : "📍 Pit #";
+  const lblR  = lang==="kz" ? "Бөлме" : lang==="ru" ? "Комната" : "Room";
+  const lblNF = lang==="kz" ? "Команда табылмады" : lang==="ru" ? "Команда не найдена" : "Team not found";
+
   return (
-    <div className="tc-embed">
-      <div className="tc-embed__frame-wrap">
-        <iframe
-          className="tc-embed__frame"
-          src={tcEmbedUrl(url)}
-          title={title}
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-        />
+    <div className="fll-search-wrap">
+      <div className="tc-search-bar fll-search-bar">
+        <svg className="tc-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input className="tc-search-input fll-input" type="text" placeholder={ph}
+          value={query} onChange={e => setQuery(e.target.value)} autoComplete="off" spellCheck={false} />
+      </div>
+      {!query && <div className="fll-search-hint">{hint}</div>}
+      {query && (
+        <AnimatePresence mode="wait">
+          <motion.div key={qn||"_"} initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} exit={{opacity:0}} transition={{duration:0.2}}>
+            {!pitHit && judgeHits.length === 0
+              ? <div className="fll-not-found">{lblNF}</div>
+              : (
+                <div className="fll-hits">
+                  {pitHit && (
+                    <div className="fll-hit-section">
+                      <div className="fll-hit-section-title">{lblP}</div>
+                      <div className="fll-hit-card fll-hit-card--pit">
+                        <span className="fll-pit-num">{pitHit.pit}</span>
+                        <span className="fll-pit-team">{pitHit.team}</span>
+                      </div>
+                    </div>
+                  )}
+                  {judgeHits.length > 0 && (
+                    <div className="fll-hit-section">
+                      <div className="fll-hit-section-title">{lblJ}</div>
+                      {judgeHits.map((slot, i) => (
+                        <div key={i} className="fll-hit-card fll-hit-card--judge">
+                          <div className="fll-hit-left">
+                            <div className="fll-hit-time">{slot.time}</div>
+                            <div className="fll-hit-day">30.06</div>
+                          </div>
+                          <div className="fll-hit-right">
+                            {slot.matched.map(rn => (
+                              <div key={rn} className="fll-hit-field">{lblR} {rn} · <strong>{slot.r[rn]}</strong></div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
+            }
+          </motion.div>
+        </AnimatePresence>
+      )}
+    </div>
+  );
+}
+
+// ── FLL GAME FULL SCHEDULE ────────────────────────────────────────────
+function FLLGameSchedule() {
+  const { lang } = useLang();
+  const [day, setDay] = useState("30.06");
+  const dayLabel = d => d === "30.06"
+    ? (lang==="kz" ? "30 маусым" : lang==="ru" ? "30 июня" : "June 30")
+    : (lang==="kz" ? "1 шілде"  : lang==="ru" ? "1 июля"  : "July 1");
+
+  const groups = {};
+  FLL_GAME_SLOTS.filter(s => s.day === day).forEach(s => {
+    if (!groups[s.rnd]) groups[s.rnd] = [];
+    groups[s.rnd].push(s);
+  });
+  const lblT = lang==="kz" ? "Уақыт" : lang==="ru" ? "Время" : "Time";
+
+  return (
+    <div className="fll-sched-wrap">
+      <div className="fll-day-tabs">
+        {["30.06","01.07"].map(d => (
+          <button key={d} className={`fll-day-tab${day===d?" fll-day-tab--on":""}`} onClick={() => setDay(d)}>{dayLabel(d)}</button>
+        ))}
+      </div>
+      {Object.entries(groups).map(([rnd, slots]) => (
+        <div key={rnd} className="fll-rnd-block">
+          <div className="fll-rnd-title">{FLL_RND[rnd]?.[lang] ?? rnd}</div>
+          <div className="fll-sched-scroll">
+            <div className="fll-sched-table fll-sched-table--6">
+              <div className="fll-sched-head">
+                <span>{lblT}</span>{[1,2,3,4,5,6].map(n => <span key={n}>F{n}</span>)}
+              </div>
+              {slots.map((slot, i) => (
+                <div key={i} className="fll-sched-row">
+                  <span className="fll-sched-time">{slot.time}</span>
+                  {slot.f.map((tm, j) => <span key={j} className={`fll-sched-cell${!tm?" fll-sched-cell--empty":""}`}>{tm||"—"}</span>)}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function FLLJudgingSchedule() {
+  const { lang } = useLang();
+  const [day, setDay] = useState("30.06");
+  const dayLabel = d => d === "30.06"
+    ? (lang==="kz" ? "30 маусым" : lang==="ru" ? "30 июня" : "June 30")
+    : (lang==="kz" ? "1 шілде"  : lang==="ru" ? "1 июля"  : "July 1");
+  const slots  = FLL_JUDGING.filter(s => s.day === day);
+  const lblT   = lang==="kz" ? "Уақыт" : lang==="ru" ? "Время" : "Time";
+  const lblR   = n => lang==="kz" ? `Бөлме ${n}` : lang==="ru" ? `Комн. ${n}` : `Room ${n}`;
+
+  return (
+    <div className="fll-sched-wrap">
+      <div className="fll-day-tabs">
+        {["30.06","01.07"].map(d => (
+          <button key={d} className={`fll-day-tab${day===d?" fll-day-tab--on":""}`} onClick={() => setDay(d)}>{dayLabel(d)}</button>
+        ))}
+      </div>
+      <div className="fll-sched-table fll-sched-table--4">
+        <div className="fll-sched-head">
+          <span>{lblT}</span>{[1,2,3,4].map(n => <span key={n}>{lblR(n)}</span>)}
+        </div>
+        {slots.map((slot, i) => (
+          <div key={i} className="fll-sched-row">
+            <span className="fll-sched-time">{slot.time}</span>
+            {[1,2,3,4].map(n => <span key={n} className="fll-sched-cell">{slot.r[n]}</span>)}
+          </div>
+        ))}
       </div>
     </div>
   );
 }
 
-function TechCupSearch({ t }) {
+// ── EXPLORE SCHEDULE VIEWS ────────────────────────────────────────────
+function ExploreJudgingSchedule() {
+  const { lang } = useLang();
+  const lblT = lang==="kz" ? "Уақыт" : lang==="ru" ? "Время" : "Time";
+  const lblR = n => lang==="kz" ? `Бөлме ${n}` : lang==="ru" ? `Комн. ${n}` : `Room ${n}`;
   return (
-    <div className="tc-search-wrap">
-      <div className="tc-search-bar">
-        <svg className="tc-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
-          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-        </svg>
-        <input
-          className="tc-search-input"
-          type="text"
-          placeholder={t("tc.search.placeholder")}
-          readOnly
-        />
+    <div className="fll-sched-wrap">
+      <div className="fll-sched-table fll-sched-table--4">
+        <div className="fll-sched-head">
+          <span>{lblT}</span>{[1,2,3,4].map(n => <span key={n}>{lblR(n)}</span>)}
+        </div>
+        {EXPLORE_JUDGING.map((slot, i) => (
+          <div key={i} className="fll-sched-row">
+            <span className="fll-sched-time">{slot.time}</span>
+            {[1,2,3,4].map(n => <span key={n} className={`fll-sched-cell${!slot.r[n]?" fll-sched-cell--empty":""}`}>{slot.r[n]||"—"}</span>)}
+          </div>
+        ))}
       </div>
-      <TechCupComingSoon label={t("tc.tab.search")} t={t} />
+    </div>
+  );
+}
+
+function ExplorePitList() {
+  const { lang } = useLang();
+  const lblPit  = lang==="kz" ? "Пит №" : lang==="ru" ? "Пит №" : "Pit #";
+  const lblTeam = lang==="kz" ? "Команда" : lang==="ru" ? "Команда" : "Team";
+  return (
+    <div className="explore-pit-wrap">
+      <div className="explore-pit-header">
+        <span>{lblPit}</span><span>{lblTeam}</span>
+      </div>
+      {EXPLORE_PITS.map(({ pit, team }) => (
+        <div key={pit} className="explore-pit-row">
+          <span className="explore-pit-num">{pit}</span>
+          <span className="explore-pit-team">{team}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── FLL TAB (Search / Robot Game / Judging) ───────────────────────────
+function FLLTab() {
+  const { lang } = useLang();
+  const [sub, setSub] = useState("search");
+  const subs = [
+    { key:"search",  lbl: lang==="kz"?"Іздеу":lang==="ru"?"Поиск":"Search" },
+    { key:"game",    lbl: lang==="kz"?"Робот Ойыны":"Robot Game" },
+    { key:"judging", lbl: lang==="kz"?"Бағалау":lang==="ru"?"Судейство":"Judging" },
+  ];
+  return (
+    <div className="fll-tab-wrap">
+      <div className="fll-subtabs">
+        {subs.map(s => (
+          <button key={s.key} className={`fll-subtab${sub===s.key?" fll-subtab--on":""}`} onClick={() => setSub(s.key)}>{s.lbl}</button>
+        ))}
+      </div>
+      <AnimatePresence mode="wait">
+        <motion.div key={sub} initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-8}} transition={{duration:0.22}}>
+          {sub==="search"  ? <FLLTeamSearch /> :
+           sub==="game"    ? <FLLGameSchedule /> :
+                             <FLLJudgingSchedule />}
+        </motion.div>
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// ── EXPLORE TAB (Search / Judging / Pit Numbers) ──────────────────────
+function ExploreTab() {
+  const { lang } = useLang();
+  const [sub, setSub] = useState("search");
+  const subs = [
+    { key:"search",  lbl: lang==="kz"?"Іздеу":lang==="ru"?"Поиск":"Search" },
+    { key:"judging", lbl: lang==="kz"?"Бағалау":lang==="ru"?"Судейство":"Judging" },
+    { key:"pits",    lbl: lang==="kz"?"Пит нөмірлері":lang==="ru"?"Пит номера":"Pit Numbers" },
+  ];
+  return (
+    <div className="fll-tab-wrap">
+      <div className="fll-subtabs">
+        {subs.map(s => (
+          <button key={s.key} className={`fll-subtab${sub===s.key?" fll-subtab--on":""}`} onClick={() => setSub(s.key)}>{s.lbl}</button>
+        ))}
+      </div>
+      <AnimatePresence mode="wait">
+        <motion.div key={sub} initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-8}} transition={{duration:0.22}}>
+          {sub==="search"  ? <ExploreTeamSearch /> :
+           sub==="judging" ? <ExploreJudgingSchedule /> :
+                             <ExplorePitList />}
+        </motion.div>
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// ── FTC TAB — 2 YouTube streams ───────────────────────────────────────
+function FTCTab({ t }) {
+  const streams = [
+    { title:"FTC Stream 1", url:FTC_STREAM1_URL },
+    { title:"FTC Stream 2", url:FTC_STREAM2_URL },
+  ];
+  return (
+    <div className="ftc-streams-wrap">
+      {streams.map((s, i) => (
+        <div key={i} className="ftc-stream-block">
+          {s.url
+            ? (
+              <div className="tc-embed__frame-wrap">
+                <iframe className="tc-embed__frame" src={tcEmbedUrl(s.url)} title={s.title}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
+              </div>
+            ) : (
+              <div className="tc-embed-soon">
+                <span className="tc-embed-soon__label">{s.title}</span>
+                <p className="tc-embed-soon__msg">{t("tc.stream.soon")}</p>
+              </div>
+            )
+          }
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── RULES TAB — announcement + video + location ───────────────────────
+const RULES_CONTENT = {
+  kz: [
+    "🌟 Құрметті Almaty Tech Cup XII қатысушылары!",
+    "Жарыс басталар алдында келесі ережелерге назар аударыңыз:",
+    "",
+    "1️⃣ Кортта, трибунада және пит-зонада тамақ ішуге тыйым салынады. ❌",
+    "",
+    "2️⃣ Қабырғаларға және парталарға таспа (скотч) жабыстыруға болмайды. 🚫",
+    "",
+    "3️⃣ Ұзартқыш сымды (удлинитель) өзіңізбен ала келіңіз. 🔌",
+    "",
+    "4️⃣ Арена аумағында және пит-зонада аралау, кесу, бұрғылау және басқа да қауіпті құралдарды қолдануға тыйым салынады. ⚠️",
+    "",
+    "5️⃣ Әрбір қатысушыға білезік пен Driver team қатысушыларына жапсырма беріледі. 🎫",
+    "🔹 Білезік - Almaty Arena ғимаратына кіру үшін міндетті.",
+    "🔹 Жапсырма - корт аумағына кіру үшін міндетті.",
+    "Білезік немесе жапсырма болмаған жағдайда тиісті аймаққа кіруге рұқсат етілмейді.",
+    "",
+    "6️⃣ Корт аумағына тек жапсырмасы бар Driver Team қатысушыларына ғана кіруге рұқсат етіледі.",
+    "Пит зоналар 2 этажда, төрешілік кабинет 1 этажда орналасқан.",
+  ],
+  ru: [
+    "🌟 Уважаемые участники Almaty Tech Cup XII!",
+    "Перед началом соревнований обратите внимание на следующие правила:",
+    "",
+    "1️⃣ Запрещается принимать пищу на корте, трибунах и в пит-зоне. ❌",
+    "",
+    "2️⃣ Нельзя клеить скотч на стены и парты. 🚫",
+    "",
+    "3️⃣ Возьмите с собой удлинитель. 🔌",
+    "",
+    "4️⃣ Запрещается использовать пилы, ножи, дрели и другие опасные инструменты на территории арены и в пит-зоне. ⚠️",
+    "",
+    "5️⃣ Каждому участнику выдаётся браслет, а участникам Driver Team — стикер. 🎫",
+    "🔹 Браслет — обязателен для входа в здание Almaty Arena.",
+    "🔹 Стикер — обязателен для входа на территорию корта.",
+    "Без браслета или стикера вход в соответствующую зону запрещён.",
+    "",
+    "6️⃣ На территорию корта допускаются только участники Driver Team со стикерами.",
+    "Пит-зоны находятся на 2 этаже, судейские комнаты — на 1 этаже.",
+  ],
+  en: [
+    "🌟 Dear Almaty Tech Cup XII participants!",
+    "Please note the following rules before the competition begins:",
+    "",
+    "1️⃣ Food and drinks are not allowed on the court, stands, or in the pit area. ❌",
+    "",
+    "2️⃣ Tape may not be applied to walls or desks. 🚫",
+    "",
+    "3️⃣ Please bring your own extension cord. 🔌",
+    "",
+    "4️⃣ Sawing, cutting, drilling and other dangerous tools are prohibited in the arena and pit area. ⚠️",
+    "",
+    "5️⃣ Each participant receives a wristband; Driver Team members receive a sticker. 🎫",
+    "🔹 Wristband — required to enter the Almaty Arena building.",
+    "🔹 Sticker — required to enter the court area.",
+    "Without a wristband or sticker, entry to the respective area is prohibited.",
+    "",
+    "6️⃣ Only Driver Team members with stickers are allowed on the court.",
+    "Pit zones are on the 2nd floor; judging rooms are on the 1st floor.",
+  ],
+};
+
+function RulesTab({ t }) {
+  const { lang } = useLang();
+  const lines = RULES_CONTENT[lang] ?? RULES_CONTENT.ru;
+  return (
+    <div className="rules-tab">
+      {TC_RULES_VIDEO_URL && (
+        <div className="tc-embed__frame-wrap rules-video-wrap">
+          <iframe className="tc-embed__frame" src={tcEmbedUrl(TC_RULES_VIDEO_URL)} title="Rules Video"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
+        </div>
+      )}
+      <div className="rules-text-card">
+        {lines.map((line, i) =>
+          line
+            ? <p key={i} className="rules-line">{line}</p>
+            : <div key={i} className="rules-spacer" />
+        )}
+      </div>
     </div>
   );
 }
 
 function TechCupPage({ onClose }) {
   const t = useT();
-  const [tab, setTab] = useState("teams");
+  const [tab, setTab] = useState("fll");
   return (
     <div className="sub-page">
       <div className="sub-page__topbar">
@@ -2289,15 +2812,12 @@ function TechCupPage({ onClose }) {
             transition={{ duration: 0.26 }}
             style={tab === "chat" ? { height: "100%" } : {}}
           >
-            {tab === "chat"
-              ? <TechCupChat />
-              : tab === "search"
-              ? <TechCupSearch t={t} />
-              : tab === "live"
-              ? <TechCupEmbed title="Live FTC" url={TC_LIVE_URL} t={t} />
-              : tab === "fll"
-              ? <TechCupEmbed title="FLL" url={TC_FLL_URL} t={t} />
-              : <TechCupComingSoon label={t(`tc.tab.${tab}`)} t={t} />
+            {tab === "chat"    ? <TechCupChat /> :
+             tab === "fll"     ? <FLLTab /> :
+             tab === "explore" ? <ExploreTab /> :
+             tab === "ftc"     ? <FTCTab t={t} /> :
+             tab === "rules"   ? <RulesTab t={t} /> :
+             <TechCupComingSoon label={TC_TABS.find(tb => tb.key === tab)?.label ?? t(`tc.tab.${tab}`)} t={t} />
             }
           </motion.div>
         </AnimatePresence>
