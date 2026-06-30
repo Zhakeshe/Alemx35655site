@@ -2944,28 +2944,36 @@ function FTCJudgingSchedule() {
 // ── FTC TEAM SEARCH (local schedule + FTC Scout API) ──────────────────
 function FTCTeamSearch() {
   const { lang } = useLang();
-  const [query, setQuery]       = useState("");
-  const [selected, setSelected] = useState(null);
+  const [query, setQuery]         = useState("");
+  const [selected, setSelected]   = useState(null);
   const [scoutData, setScoutData] = useState(null);
   const [scoutLoading, setScoutLoading] = useState(false);
+  const now = useNow(20000);
 
-  const allTeams = useMemo(() => {
+  const slottedTeams = useMemo(() => {
     const list = [];
     FTC_JUDGING_TC.forEach(slot => {
       if (slot.lunch) return;
-      [1,2,3,4].forEach(n => { if (slot.r[n]) list.push({ ...slot.r[n], time: slot.time, room: n }); });
+      const { start, end } = parseSlotMs("30.06", slot.time);
+      [1,2,3,4].forEach(n => {
+        if (slot.r[n]) list.push({ ...slot.r[n], time: slot.time, room: n, start, end });
+      });
     });
     return list;
   }, []);
+
+  const allSlotStarts = useMemo(() =>
+    FTC_JUDGING_TC.filter(s => !s.lunch).map(s => parseSlotMs("30.06", s.time).start),
+  []);
 
   const qn = useMemo(() => fllNorm(query), [query]);
 
   const matchingTeams = useMemo(() => {
     if (!qn) return [];
-    return allTeams.filter(t =>
+    return slottedTeams.filter(t =>
       fllNorm(t.name).includes(qn) || String(t.num).includes(query.trim())
     );
-  }, [qn, query, allTeams]);
+  }, [qn, query, slottedTeams]);
 
   const openTeam = async (team) => {
     setSelected(team);
@@ -2993,6 +3001,17 @@ function FTCTeamSearch() {
     na:   lang==="kz"?"Деректер жоқ":lang==="ru"?"Нет данных":"No data",
   };
 
+  const slotBadge = (start, end) => {
+    const isNow  = now >= start && now < end;
+    const isPast = now >= end;
+    const slotsBefore = allSlotStarts.filter(s => s > now && s < start).length;
+    const msBefore    = Math.max(0, start - now);
+    if (isNow)  return <span className="np-before np-before--now">{lang==="kz"?"🔴 Бағалауда!":lang==="ru"?"🔴 На судействе!":"🔴 Being judged!"}</span>;
+    if (isPast) return <span className="np-before np-before--past">{lang==="kz"?"Өтті":lang==="ru"?"Завершено":"Done"}</span>;
+    if (slotsBefore === 0) return <span className="np-before np-before--next">{lang==="kz"?"⏭ Келесі сіздер!":lang==="ru"?"⏭ Вы следующие!":"⏭ You're next!"}</span>;
+    return <span className="np-before">{lang==="kz"?`${slotsBefore} слот алда · ${fmtMs(msBefore,lang)}`:lang==="ru"?`${slotsBefore} сл. до вас · ${fmtMs(msBefore,lang)}`:`${slotsBefore} slots ahead · ${fmtMs(msBefore,lang)}`}</span>;
+  };
+
   if (selected) {
     const qs = scoutData?.quickStats;
     return (
@@ -3009,6 +3028,7 @@ function FTCTeamSearch() {
             </div>
             <div className="fll-hit-right">
               <div className="fll-hit-field">{L.R} {selected.room} · <strong>{selected.name}</strong></div>
+              {slotBadge(selected.start, selected.end)}
             </div>
           </div>
         </div>
@@ -3020,10 +3040,10 @@ function FTCTeamSearch() {
           ) : qs ? (
             <div className="ftc-scout-stats">
               {[
-                {label:"Total OPR",v:qs.tot?.value,rank:qs.tot?.rank,col:"#a855f7"},
-                {label:"Auto OPR", v:qs.auto?.value,rank:qs.auto?.rank,col:"#7c3aed"},
-                {label:"Teleop OPR",v:qs.dc?.value,rank:qs.dc?.rank,col:"#c084fc"},
-                {label:"Endgame OPR",v:qs.eg?.value,rank:qs.eg?.rank,col:"#f472b6"},
+                {label:"Total OPR",   v:qs.tot?.value,  rank:qs.tot?.rank,  col:"#a855f7"},
+                {label:"Auto OPR",    v:qs.auto?.value, rank:qs.auto?.rank, col:"#7c3aed"},
+                {label:"Teleop OPR",  v:qs.dc?.value,   rank:qs.dc?.rank,   col:"#c084fc"},
+                {label:"Endgame OPR", v:qs.eg?.value,   rank:qs.eg?.rank,   col:"#f472b6"},
               ].map(({label,v,rank,col}) => (
                 <div key={label} className="ftc-scout-stat-row">
                   <span className="ftc-scout-stat-label">{label}</span>
