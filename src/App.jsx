@@ -2147,11 +2147,41 @@ const FLL_RND = {
   official3: {kz:"Ресми матч 3", ru:"Офиц. матч 3",  en:"Official 3"},
 };
 
-// FTC Streams — fill URLs when ready
-const FTC_STREAM1_URL = "";
+// FTC Streams
+const FTC_STREAM1_URL = "https://www.youtube.com/live/9ywna4SeDoI?si=Gr2K1C2_zID841XE";
 const FTC_STREAM2_URL = "";
 // Rules page video — fill URL when ready
 const TC_RULES_VIDEO_URL = "";
+
+// ── QUAL MATCH SCHEDULE (from PDF, KZ local time) ─────────────────────
+const TC_QUAL_SCHEDULE = [
+  {n:1,d:"30.06",t:"16:10"},{n:2,d:"30.06",t:"16:18"},{n:3,d:"30.06",t:"16:26"},
+  {n:4,d:"30.06",t:"16:34"},{n:5,d:"30.06",t:"16:42"},{n:6,d:"30.06",t:"16:50"},
+  {n:7,d:"30.06",t:"16:58"},{n:8,d:"30.06",t:"17:06"},{n:9,d:"30.06",t:"17:14"},
+  {n:10,d:"30.06",t:"17:22"},{n:11,d:"30.06",t:"17:30"},{n:12,d:"30.06",t:"17:38"},
+  {n:13,d:"30.06",t:"17:46"},{n:14,d:"30.06",t:"17:54"},{n:15,d:"30.06",t:"18:02"},
+  {n:16,d:"30.06",t:"18:10"},{n:17,d:"30.06",t:"18:18"},{n:18,d:"30.06",t:"18:26"},
+  {n:19,d:"30.06",t:"18:34"},{n:20,d:"30.06",t:"18:42"},{n:21,d:"30.06",t:"18:50"},
+  {n:22,d:"30.06",t:"18:58"},{n:23,d:"30.06",t:"19:06"},{n:24,d:"30.06",t:"19:14"},
+  {n:25,d:"30.06",t:"19:22"},{n:26,d:"30.06",t:"19:30"},{n:27,d:"30.06",t:"19:38"},
+  {n:28,d:"30.06",t:"19:46"},{n:29,d:"30.06",t:"19:54"},{n:30,d:"30.06",t:"20:02"},
+  {n:31,d:"01.07",t:"08:30"},{n:32,d:"01.07",t:"08:38"},{n:33,d:"01.07",t:"08:46"},
+  {n:34,d:"01.07",t:"08:54"},{n:35,d:"01.07",t:"09:02"},{n:36,d:"01.07",t:"09:10"},
+  {n:37,d:"01.07",t:"09:18"},{n:38,d:"01.07",t:"09:26"},{n:39,d:"01.07",t:"09:34"},
+  {n:40,d:"01.07",t:"09:42"},{n:41,d:"01.07",t:"09:50"},{n:42,d:"01.07",t:"09:58"},
+  {n:43,d:"01.07",t:"10:06"},{n:44,d:"01.07",t:"10:14"},{n:45,d:"01.07",t:"10:22"},
+  {n:46,d:"01.07",t:"10:30"},{n:47,d:"01.07",t:"10:38"},{n:48,d:"01.07",t:"10:46"},
+  {n:49,d:"01.07",t:"10:54"},{n:50,d:"01.07",t:"11:02"},
+];
+
+function matchSchedMs(n) {
+  const s = TC_QUAL_SCHEDULE.find(x => x.n === n);
+  if (!s) return null;
+  const [dd, mm] = s.d.split(".");
+  const [h, m]   = s.t.split(":").map(Number);
+  const start    = new Date(2026, Number(mm)-1, Number(dd), h, m).getTime();
+  return { start, end: start + 7 * 60 * 1000, label: s.t, day: s.d };
+}
 
 const TC_TABS = [
   { key:"fll" },
@@ -2947,24 +2977,39 @@ function FTCTeamSearch() {
 // ── FTC RANKINGS TAB (Live from FTC Scout) ────────────────────────────
 function FTCRankingTab() {
   const { lang } = useLang();
-  const [data, setData]       = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [view, setView]       = useState("ranking");
+  const now = useNow(10000);
+  const [data, setData]         = useState(null);
+  const [loading, setLoading]   = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [view, setView]         = useState("ranking");
   const [selected, setSelected] = useState(null);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (isManual = false) => {
+    if (isManual) setRefreshing(true);
     try {
       const d = await ftcGql(Q_TC_RANKINGS, {});
       setData(d.eventByCode ?? null);
     } catch (_) {}
     setLoading(false);
+    if (isManual) setTimeout(() => setRefreshing(false), 600);
   }, []);
 
   useEffect(() => {
     load();
-    const iv = setInterval(load, 30000);
+    const iv = setInterval(() => load(), 30000);
     return () => clearInterval(iv);
   }, [load]);
+
+  // Build teamNum → name map
+  const teamMap = useMemo(() => {
+    if (!data) return {};
+    return Object.fromEntries(data.teams.map(t => [t.team.number, t.team.name]));
+  }, [data]);
+
+  // Build matchNum → schedule time map
+  const schedMap = useMemo(() =>
+    Object.fromEntries(TC_QUAL_SCHEDULE.map(s => [s.n, matchSchedMs(s.n)])),
+  []);
 
   const ranked = useMemo(() => {
     if (!data) return [];
@@ -2981,15 +3026,128 @@ function FTCRankingTab() {
     return data.matches.filter(m => m.scores);
   }, [data]);
 
+  const upcomingMatches = useMemo(() => {
+    if (!data) return [];
+    return data.matches.filter(m => !m.scores);
+  }, [data]);
+
+  // Current / next match from schedule
+  const { liveMatch, nextMatch } = useMemo(() => {
+    let liveMatch = null, nextMatch = null;
+    for (const m of data?.matches ?? []) {
+      const sched = schedMap[m.matchNum];
+      if (!sched) continue;
+      if (now >= sched.start && now < sched.end && !m.scores) { liveMatch = m; break; }
+    }
+    if (!liveMatch) {
+      // fallback: first unscored match (likely next/live)
+      const firstUnscored = upcomingMatches[0];
+      const sched = firstUnscored ? schedMap[firstUnscored.matchNum] : null;
+      if (sched && now < sched.end + 15 * 60 * 1000) liveMatch = firstUnscored;
+    }
+    for (const m of upcomingMatches) {
+      const sched = schedMap[m.matchNum];
+      if (sched && sched.start > now && m !== liveMatch) { nextMatch = m; break; }
+    }
+    return { liveMatch, nextMatch };
+  }, [data, upcomingMatches, schedMap, now]);
+
   const L = {
     rank:    lang==="kz"?"🏆 Рейтинг":lang==="ru"?"🏆 Рейтинг":"🏆 Ranking",
-    matches: lang==="kz"?"⚽ Матчтар":lang==="ru"?"⚽ Матчи":"⚽ Matches",
+    matches: lang==="kz"?"📋 Матчтар":lang==="ru"?"📋 Матчи":"📋 Matches",
     loading: lang==="kz"?"Жүктелуде...":lang==="ru"?"Загрузка...":"Loading...",
     noData:  lang==="kz"?"Деректер жоқ":lang==="ru"?"Нет данных":"No data",
     back:    lang==="kz"?"← Артқа":lang==="ru"?"← Назад":"← Back",
     noMatch: lang==="kz"?"Матч ойналмады":lang==="ru"?"Матчи не сыграны":"No matches played yet",
     notYet:  lang==="kz"?"Матч ойналмаған командалар":lang==="ru"?"Ещё не играли":"Not yet played",
     teams:   lang==="kz"?"команда":lang==="ru"?"команд":"teams",
+    liveNow: lang==="kz"?"🔴 LIVE — ҚАЗІР ОЙНАЙДЫ":lang==="ru"?"🔴 LIVE — ИДЁТ МАТЧ":"🔴 LIVE — PLAYING NOW",
+    nextUp:  lang==="kz"?"⏭ Келесі матч":lang==="ru"?"⏭ Следующий матч":"⏭ Next match",
+    red:     lang==="kz"?"Қызыл":lang==="ru"?"Красный":"Red",
+    blue:    lang==="kz"?"Көк":lang==="ru"?"Синий":"Blue",
+    win:     lang==="kz"?"Жеңіс":lang==="ru"?"Победа":"Win",
+    loss:    lang==="kz"?"Жеңіліс":lang==="ru"?"Поражение":"Loss",
+    tie:     lang==="kz"?"Тең":lang==="ru"?"Ничья":"Tie",
+    played:  lang==="kz"?"Ойналды":lang==="ru"?"Сыграно":"Played",
+    upcoming:lang==="kz"?"Ойналмаған матчтар":lang==="ru"?"Предстоящие матчи":"Upcoming",
+    partner: lang==="kz"?"Серіктес":lang==="ru"?"Партнёр":"Partner",
+    vs:      lang==="kz"?"қарсы":lang==="ru"?"против":"vs",
+  };
+
+  // Renders an alliance block (used in match cards)
+  const AllianceBlock = ({ teams, score, side, won, teamMap, myNum }) => (
+    <div className={`tc-match-side tc-match-side--${side}${won ? " tc-match-side--win" : ""}`}>
+      {side === "red" && <span className="tc-match-score">{score ?? "?"}</span>}
+      <div className="tc-match-teams">
+        {teams.map(tm => (
+          <span key={tm.teamNumber} className={tm.teamNumber === (myNum ?? 33655) ? "tc-match-team--me" : ""}>
+            <span className="tc-match-tnum">#{tm.teamNumber}</span>
+            {teamMap[tm.teamNumber] && <span className="tc-match-tname">{teamMap[tm.teamNumber]}</span>}
+          </span>
+        ))}
+      </div>
+      {side === "blue" && <span className="tc-match-score">{score ?? "?"}</span>}
+    </div>
+  );
+
+  // Full match card used in the matches tab
+  const MatchCard = ({ m, myNum }) => {
+    const red  = m.teams.filter(tm => tm.alliance === "Red"  && tm.onField);
+    const blue = m.teams.filter(tm => tm.alliance === "Blue" && tm.onField);
+    const sc   = m.scores;
+    const redWin = sc && sc.red.totalPoints > sc.blue.totalPoints;
+    const tied   = sc && sc.red.totalPoints === sc.blue.totalPoints;
+    const sched  = schedMap[m.matchNum];
+    const isLive = sched && now >= sched.start && now < sched.end && !sc;
+    const isPast = sc != null;
+    return (
+      <div className={`tc-match-card${isLive ? " tc-match-card--live" : ""}`}>
+        <div className="tc-match-header">
+          <div className="tc-match-num">
+            {isLive && <span className="tc-match-live-dot" />}
+            Q{m.matchNum}
+          </div>
+          {sched && (
+            <span className="tc-match-time">
+              {sched.day === "30.06"
+                ? (lang==="kz"?"30 маусым":lang==="ru"?"30 июня":"Jun 30")
+                : (lang==="kz"?"1 шілде":lang==="ru"?"1 июля":"Jul 1")}
+              {" · "}{sched.label}
+            </span>
+          )}
+          {isPast && (
+            <span className={`tc-match-result-badge tc-match-result-badge--${redWin?"red":tied?"tie":"blue"}`}>
+              {redWin ? `🔴 ${L.red}` : tied ? `= ${L.tie}` : `🔵 ${L.blue}`}
+            </span>
+          )}
+        </div>
+        <div className="tc-match-alliances">
+          <AllianceBlock teams={red}  score={sc?.red.totalPoints}  side="red"  won={!tied && redWin}         teamMap={teamMap} myNum={myNum} />
+          <div className="tc-match-mid">
+            {isPast
+              ? <span style={{fontSize:".75rem",fontWeight:800,color:redWin?"#f87171":tied?"#c4b5fd":"#60a5fa"}}>{sc.red.totalPoints}:{sc.blue.totalPoints}</span>
+              : <span style={{fontSize:".7rem",color:"rgba(196,181,253,.4)"}}>vs</span>}
+          </div>
+          <AllianceBlock teams={blue} score={sc?.blue.totalPoints} side="blue" won={!tied && !redWin && sc != null} teamMap={teamMap} myNum={myNum} />
+        </div>
+        {sc && (
+          <div className="tc-match-breakdown">
+            <div className="tc-match-break-row tc-match-break-row--red">
+              <span className="tc-break-label">Auto</span><span className="tc-break-val">{sc.red.autoPoints}</span>
+              <span className="tc-break-label">DC</span><span className="tc-break-val">{sc.red.dcPoints}</span>
+              <span className="tc-break-label">Pen</span><span className="tc-break-val">{sc.red.penaltyPointsCommitted}</span>
+              <span className="tc-break-label tc-break-total">Total</span><span className="tc-break-val tc-break-total">{sc.red.totalPoints}</span>
+            </div>
+            <div className="tc-match-break-row tc-match-break-row--blue">
+              <span className="tc-break-label">Auto</span><span className="tc-break-val">{sc.blue.autoPoints}</span>
+              <span className="tc-break-label">DC</span><span className="tc-break-val">{sc.blue.dcPoints}</span>
+              <span className="tc-break-label">Pen</span><span className="tc-break-val">{sc.blue.penaltyPointsCommitted}</span>
+              <span className="tc-break-label tc-break-total">Total</span><span className="tc-break-val tc-break-total">{sc.blue.totalPoints}</span>
+            </div>
+          </div>
+        )}
+      </div>
+    );
   };
 
   if (loading) return <div className="ftc-scout-loading">{L.loading}</div>;
@@ -2997,72 +3155,94 @@ function FTCRankingTab() {
 
   // ── Team detail view ──
   if (selected) {
-    const t = selected;
+    const entry = selected;
+    const num   = entry.team.number;
     const teamMatches = data.matches.filter(m =>
-      m.teams.some(tm => tm.teamNumber === t.team.number && tm.onField)
+      m.teams.some(tm => tm.teamNumber === num && tm.onField)
     );
+    const allSchedForTeam = teamMatches.map(m => schedMap[m.matchNum]).filter(Boolean);
+
     return (
       <div className="fll-search-wrap">
         <button className="fll-detail-back" onClick={() => setSelected(null)}>{L.back}</button>
         <div className="fll-detail-name">
-          {t.team.name} <span className="ftc-detail-num">#{t.team.number}</span>
+          {entry.team.name} <span className="ftc-detail-num">#{num}</span>
         </div>
-        {t.stats && (
-          <div className="ftc-scout-stats">
+
+        {entry.stats ? (
+          <div className="tc-team-stat-grid">
             {[
-              { label: lang==="kz"?"Орын":lang==="ru"?"Место":"Rank",       v: `#${t.stats.rank}`,                          col:"#ffc516" },
-              { label: "W–L–T",                                               v: `${t.stats.wins}–${t.stats.losses}–${t.stats.ties}`, col:"#a855f7" },
-              { label: "RP",                                                  v: t.stats.rp,                                  col:"#c084fc" },
-              { label: "TB1",                                                 v: t.stats.tb1,                                 col:"#f472b6" },
-              { label: "TB2",                                                 v: t.stats.tb2,                                 col:"#7c3aed" },
+              { label: lang==="kz"?"Орын":lang==="ru"?"Место":"Rank",  v: `#${entry.stats.rank}`, col:"#ffc516" },
+              { label: "W–L–T", v: `${entry.stats.wins}–${entry.stats.losses}–${entry.stats.ties}`, col:"#a855f7" },
+              { label: "RP",    v: entry.stats.rp,    col:"#c084fc" },
+              { label: "TB1",   v: entry.stats.tb1,   col:"#f472b6" },
             ].map(({ label, v, col }) => (
-              <div key={label} className="ftc-scout-stat-row">
-                <span className="ftc-scout-stat-label">{label}</span>
-                <span className="ftc-scout-stat-value" style={{ color: col }}>{v}</span>
+              <div key={label} className="tc-team-stat-cell">
+                <span className="tc-team-stat-val" style={{ color: col }}>{v}</span>
+                <span className="tc-team-stat-lbl">{label}</span>
               </div>
             ))}
           </div>
+        ) : (
+          <div className="ftc-scout-loading" style={{fontSize:".78rem"}}>{lang==="kz"?"Ойын ойналмады":lang==="ru"?"Игр не было":"No matches yet"}</div>
         )}
+
         <div className="fll-hit-section">
-          <div className="fll-hit-section-title">{L.matches}</div>
+          <div className="fll-hit-section-title">
+            {lang==="kz"?"Матч кестесі":lang==="ru"?"Расписание матчей":"Match schedule"}
+          </div>
           {teamMatches.length === 0
             ? <div className="fll-search-hint">{L.noMatch}</div>
             : teamMatches.map(m => {
-                const myT  = m.teams.find(tm => tm.teamNumber === t.team.number && tm.onField);
-                const ally = myT?.alliance;
-                const sc   = m.scores;
-                const mySc  = sc ? (ally === "Red" ? sc.red  : sc.blue) : null;
-                const oppSc = sc ? (ally === "Red" ? sc.blue : sc.red)  : null;
-                const won  = mySc && oppSc && mySc.totalPoints > oppSc.totalPoints;
-                const tied = mySc && oppSc && mySc.totalPoints === oppSc.totalPoints;
-                const partners  = m.teams.filter(tm => tm.alliance === ally  && tm.onField && tm.teamNumber !== t.team.number);
-                const opponents = m.teams.filter(tm => tm.alliance !== ally  && tm.onField);
+                const sched = schedMap[m.matchNum];
+                const isNow  = sched && now >= sched.start && now < sched.end;
+                const isPast = m.scores != null || (sched && now >= sched.end);
+                const ahead  = allSchedForTeam.filter(s => s.start > now && s.start < (sched?.start ?? 0)).length;
+                const myT    = m.teams.find(tm => tm.teamNumber === num && tm.onField);
+                const ally   = myT?.alliance;
+                const sc     = m.scores;
+                const mySc   = sc ? (ally==="Red" ? sc.red  : sc.blue) : null;
+                const oppSc  = sc ? (ally==="Red" ? sc.blue : sc.red)  : null;
+                const won    = mySc && oppSc && mySc.totalPoints > oppSc.totalPoints;
+                const tied   = mySc && oppSc && mySc.totalPoints === oppSc.totalPoints;
+                const partners  = m.teams.filter(tm => tm.alliance === ally && tm.onField && tm.teamNumber !== num);
+                const opponents = m.teams.filter(tm => tm.alliance !== ally && tm.onField);
                 return (
-                  <div key={m.matchNum} className={`fll-hit-card fll-hit-card--game${!sc ? " fll-hit-card--past" : ""}`}>
+                  <div key={m.matchNum} className={`fll-hit-card fll-hit-card--game${isPast && !isNow ? " fll-hit-card--past" : ""}${isNow ? " tc-card--live" : ""}`}>
                     <div className="fll-hit-left">
-                      <span className={`tm-alliance tm-alliance--${(ally || "").toLowerCase()}`}>{ally?.[0] ?? "?"}</span>
+                      <span className={`tm-alliance tm-alliance--${(ally||"").toLowerCase()}`}>{ally?.[0] ?? "?"}</span>
                       <div className="fll-hit-time">Q{m.matchNum}</div>
+                      {sched && <div className="fll-hit-day">{sched.label}</div>}
                     </div>
-                    <div className="fll-hit-right">
+                    <div className="fll-hit-right" style={{flex:1,minWidth:0}}>
                       {sc ? (
                         <>
-                          <div className="fll-hit-round">
-                            <span className={`tm-result tm-result--${won ? "win" : tied ? "tie" : "loss"}`}>{won ? "W" : tied ? "T" : "L"}</span>
-                            {" · "}
-                            <span style={{ color:"#ef4444", fontWeight:800 }}>{sc.red.totalPoints}</span>
-                            {" : "}
-                            <span style={{ color:"#3b82f6", fontWeight:800 }}>{sc.blue.totalPoints}</span>
+                          <div className="fll-hit-round" style={{display:"flex",gap:".4rem",alignItems:"center",flexWrap:"wrap"}}>
+                            <span className={`tm-result tm-result--${won?"win":tied?"tie":"loss"}`}>{won?"W":tied?"T":"L"}</span>
+                            <span style={{color:"#ef4444",fontWeight:800}}>{sc.red.totalPoints}</span>
+                            <span style={{color:"rgba(196,181,253,.4)"}}>:</span>
+                            <span style={{color:"#3b82f6",fontWeight:800}}>{sc.blue.totalPoints}</span>
                           </div>
-                          <div className="fll-hit-field">
-                            {partners.map(tm => `#${tm.teamNumber}`).join(" ")} vs {opponents.map(tm => `#${tm.teamNumber}`).join(" ")}
+                          <div className="fll-hit-field" style={{fontSize:".7rem",color:"rgba(196,181,253,.55)"}}>
+                            {L.partner}: {partners.map(tm => teamMap[tm.teamNumber] || `#${tm.teamNumber}`).join(", ")}
+                            {" · "}{L.vs}: {opponents.map(tm => teamMap[tm.teamNumber] || `#${tm.teamNumber}`).join(", ")}
                           </div>
                           <div className="tc-match-detail-row">
-                            <span>Auto: <b>{mySc.autoPoints}</b></span>
-                            <span>DC: <b>{mySc.dcPoints}</b></span>
+                            <span style={{color:ally==="Red"?"rgba(239,68,68,.7)":"rgba(59,130,246,.7)"}}>
+                              Auto <b>{mySc.autoPoints}</b> · DC <b>{mySc.dcPoints}</b> · Pen <b>{mySc.penaltyPointsCommitted}</b>
+                            </span>
                           </div>
                         </>
+                      ) : isNow ? (
+                        <div className="np-before np-before--now" style={{display:"inline-flex"}}>
+                          🔴 {lang==="kz"?"ҚАЗІР ОЙНАЙДЫ!":lang==="ru"?"ИДЁТ МАТЧ!":"PLAYING NOW!"}
+                        </div>
+                      ) : isPast ? (
+                        <div className="np-before np-before--past">{lang==="kz"?"Өтті":lang==="ru"?"Завершено":"Done"}</div>
+                      ) : ahead === 0 ? (
+                        <div className="np-before np-before--next">⏭ {lang==="kz"?"Сіздер келесі!":lang==="ru"?"Вы следующие!":"You're next!"}</div>
                       ) : (
-                        <div className="fll-hit-round">{lang==="kz"?"Ойналмады":lang==="ru"?"Не сыграно":"Not played"}</div>
+                        <div className="np-before">{ahead} {lang==="kz"?"матч алда · ":lang==="ru"?"матча до вас · ":"matches ahead · "}{fmtMs(Math.max(0, (sched?.start ?? 0) - now), lang)}</div>
                       )}
                     </div>
                   </div>
@@ -3074,14 +3254,54 @@ function FTCRankingTab() {
     );
   }
 
+  // ── Live / Next banner ──
+  const LiveBanner = () => {
+    if (!liveMatch && !nextMatch) return null;
+    const m   = liveMatch ?? nextMatch;
+    const red  = m.teams.filter(tm => tm.alliance === "Red"  && tm.onField);
+    const blue = m.teams.filter(tm => tm.alliance === "Blue" && tm.onField);
+    const sched = schedMap[m.matchNum];
+    return (
+      <div className={`tc-live-banner${liveMatch ? " tc-live-banner--live" : ""}`}>
+        <div className="tc-live-banner__label">
+          {liveMatch ? L.liveNow : L.nextUp}
+          <span className="tc-live-banner__match"> · Q{m.matchNum}</span>
+          {sched && <span className="tc-live-banner__time"> · {sched.label}</span>}
+        </div>
+        <div className="tc-live-banner__alliances">
+          <div className="tc-live-all tc-live-all--red">
+            {red.map(tm => (
+              <span key={tm.teamNumber} className={tm.teamNumber === 33655 ? "tc-live-me" : ""}>
+                {teamMap[tm.teamNumber] || `#${tm.teamNumber}`}
+              </span>
+            ))}
+          </div>
+          <span className="tc-live-vs">vs</span>
+          <div className="tc-live-all tc-live-all--blue">
+            {blue.map(tm => (
+              <span key={tm.teamNumber} className={tm.teamNumber === 33655 ? "tc-live-me" : ""}>
+                {teamMap[tm.teamNumber] || `#${tm.teamNumber}`}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // ── Main view ──
   return (
     <div className="fll-tab-wrap">
       <div className="fll-subtabs">
         <button className={`fll-subtab${view === "ranking" ? " fll-subtab--on" : ""}`} onClick={() => setView("ranking")}>{L.rank}</button>
         <button className={`fll-subtab${view === "matches" ? " fll-subtab--on" : ""}`} onClick={() => setView("matches")}>{L.matches}</button>
-        <button className="fll-subtab tc-rank-refresh" onClick={load} title="Refresh">↻</button>
+        <button
+          className={`fll-subtab tc-rank-refresh${refreshing ? " tc-rank-refresh--spin" : ""}`}
+          onClick={() => load(true)} title="Refresh"
+        >↻</button>
       </div>
+
+      <LiveBanner />
 
       <AnimatePresence mode="wait">
         <motion.div key={view} initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, y:-8 }} transition={{ duration:0.22 }}>
@@ -3089,6 +3309,7 @@ function FTCRankingTab() {
             <div className="tc-rank-wrap">
               <div className="tc-rank-meta">
                 {ranked.length} / {data.teams.length} {L.teams} · <span className="tc-rank-live">● LIVE</span>
+                {" · "}{playedMatches.length}/{data.matches.length} {lang==="kz"?"матч ойналды":lang==="ru"?"матчей сыграно":"played"}
               </div>
               <div className="tc-rank-scroll">
                 <div className="tc-rank-table">
@@ -3119,7 +3340,7 @@ function FTCRankingTab() {
                     <>
                       <div className="tc-rank-divider">{L.notYet}</div>
                       {unranked.map(entry => (
-                        <div key={entry.team.number} className="tc-rank-row tc-rank-row--unranked">
+                        <button key={entry.team.number} className="tc-rank-row tc-rank-row--unranked" onClick={() => setSelected(entry)}>
                           <span className="tc-rank-pos">—</span>
                           <span className="tc-rank-team">
                             <span className="tc-rank-name">{entry.team.name}</span>
@@ -3128,7 +3349,7 @@ function FTCRankingTab() {
                           <span className="tc-rank-wl">—</span>
                           <span className="tc-rank-rp">—</span>
                           <span className="tc-rank-tb">—</span>
-                        </div>
+                        </button>
                       ))}
                     </>
                   )}
@@ -3137,49 +3358,26 @@ function FTCRankingTab() {
             </div>
           ) : (
             <div className="tc-rank-wrap">
-              {playedMatches.length === 0 ? (
+              {playedMatches.length === 0 && upcomingMatches.length === 0 ? (
                 <div className="fll-search-hint">{L.noMatch}</div>
               ) : (
-                [...playedMatches].reverse().map(m => {
-                  const red  = m.teams.filter(tm => tm.alliance === "Red"  && tm.onField);
-                  const blue = m.teams.filter(tm => tm.alliance === "Blue" && tm.onField);
-                  const sc   = m.scores;
-                  const redWin = sc && sc.red.totalPoints > sc.blue.totalPoints;
-                  return (
-                    <div key={m.matchNum} className="tc-match-card">
-                      <div className="tc-match-num">Q{m.matchNum}</div>
-                      <div className="tc-match-alliances">
-                        <div className={`tc-match-side tc-match-side--red${redWin ? " tc-match-side--win" : ""}`}>
-                          <div className="tc-match-teams">
-                            {red.map(tm => (
-                              <span key={tm.teamNumber} className={tm.teamNumber === 33655 ? "tc-match-team--me" : ""}># {tm.teamNumber}</span>
-                            ))}
-                          </div>
-                          <span className="tc-match-score">{sc?.red.totalPoints ?? "?"}</span>
-                        </div>
-                        <div className="tc-match-mid">
-                          <span className={redWin ? "tc-match-winner--red" : "tc-match-winner--blue"}>
-                            {redWin ? "🔴" : "🔵"}
-                          </span>
-                        </div>
-                        <div className={`tc-match-side tc-match-side--blue${!redWin && sc ? " tc-match-side--win" : ""}`}>
-                          <span className="tc-match-score">{sc?.blue.totalPoints ?? "?"}</span>
-                          <div className="tc-match-teams">
-                            {blue.map(tm => (
-                              <span key={tm.teamNumber} className={tm.teamNumber === 33655 ? "tc-match-team--me" : ""}># {tm.teamNumber}</span>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                      {sc && (
-                        <div className="tc-match-breakdown">
-                          <span style={{ color:"rgba(239,68,68,.7)" }}>Auto {sc.red.autoPoints} · DC {sc.red.dcPoints}</span>
-                          <span style={{ color:"rgba(59,130,246,.7)" }}>Auto {sc.blue.autoPoints} · DC {sc.blue.dcPoints}</span>
+                <>
+                  {playedMatches.length > 0 && (
+                    <div className="tc-matches-section-label">{L.played} ({playedMatches.length})</div>
+                  )}
+                  {[...playedMatches].reverse().map(m => <MatchCard key={m.matchNum} m={m} />)}
+                  {upcomingMatches.length > 0 && (
+                    <>
+                      <div className="tc-matches-section-label" style={{marginTop:".5rem"}}>{L.upcoming} ({upcomingMatches.length})</div>
+                      {upcomingMatches.slice(0, 5).map(m => <MatchCard key={m.matchNum} m={m} />)}
+                      {upcomingMatches.length > 5 && (
+                        <div className="tc-rank-meta" style={{textAlign:"center"}}>
+                          +{upcomingMatches.length - 5} {lang==="kz"?"матч":lang==="ru"?"матчей":"matches"}
                         </div>
                       )}
-                    </div>
-                  );
-                })
+                    </>
+                  )}
+                </>
               )}
             </div>
           )}
