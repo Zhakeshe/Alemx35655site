@@ -1483,13 +1483,16 @@ img { display: block; max-width: 100%; }
 }
 .sub-page {
   height:100vh;
+  height:100dvh; /* mobile browser chrome awareness */
   display:flex;flex-direction:column;
+  overflow:hidden;
 }
 .sub-page__topbar {
-  display:flex;align-items:center;gap:1.2rem;
-  padding:1rem 1.4rem;flex-shrink:0;
-  background:rgba(4,0,16,.88);
-  backdrop-filter:blur(14px);
+  display:flex;align-items:center;gap:.75rem;
+  padding:.75rem 1rem;flex-shrink:0;
+  background:rgba(4,0,16,.92);
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
   border-bottom:1px solid rgba(168,85,247,.12);
 }
 .sub-page__back {
@@ -1512,9 +1515,12 @@ img { display: block; max-width: 100%; }
 .sub-page__body {
   flex:1;min-height:0; /* critical for flex scroll */
   overflow-y:auto;overflow-x:hidden;
-  padding:2rem 1.4rem;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+  padding:1.25rem 1rem;
   max-width:900px;width:100%;margin:0 auto;
   scrollbar-width:thin;scrollbar-color:rgba(168,85,247,.2) transparent;
+  box-sizing:border-box;
 }
 
 /* ── TECH CUP TABS ── */
@@ -1682,9 +1688,15 @@ img { display: block; max-width: 100%; }
 }
 
 @media (max-width:600px){
-  .sub-page__topbar { padding:.8rem 1rem;gap:.75rem; }
-  .sub-page__body { padding:1.4rem 1rem; }
-  .sub-page__title h2 { font-size:1.2rem; }
+  .sub-page__topbar { padding:.6rem .75rem;gap:.5rem; }
+  .sub-page__body { padding:1rem .75rem; }
+  .sub-page__title h2 { font-size:1.05rem; }
+  .sub-page__eye { font-size:.6rem; }
+  .sub-page__back { font-size:.75rem;padding:.28rem .65rem; }
+  .tc-tabs { padding:.55rem .75rem; }
+  .fll-sched-table--6 { min-width:360px; }
+  .fll-sched-table--4 { min-width:300px; }
+  .np-chip { font-size:.65rem;padding:.12rem .35rem; }
 }
 
 /* ── MATCH ROWS ── */
@@ -2025,3 +2037,41 @@ img { display: block; max-width: 100%; }
 .np-before--now  { background:rgba(239,68,68,.13);color:#fca5a5;border-color:rgba(239,68,68,.28); }
 .np-before--next { background:rgba(34,197,94,.09);color:rgba(134,239,172,.9);border-color:rgba(34,197,94,.2); }
 .fll-hit-card--past { opacity:.45; }
+.np-before--past { background:rgba(100,100,100,.1);color:rgba(200,200,200,.5);border-color:rgba(150,150,150,.2); }
+
+/* ── TEAM LIST (two-level search) ──────────────────────────────── */
+.fll-team-list { display:flex;flex-direction:column;gap:.3rem;margin-top:.25rem; }
+.fll-team-row {
+  display:flex;align-items:center;justify-content:space-between;
+  width:100%;padding:.65rem .85rem;border-radius:10px;
+  border:1px solid rgba(168,85,247,.14);background:rgba(168,85,247,.06);
+  cursor:pointer;text-align:left;
+  transition:background .15s,border-color .15s;
+}
+.fll-team-row:hover  { background:rgba(168,85,247,.13);border-color:rgba(168,85,247,.35); }
+.fll-team-row:active { background:rgba(168,85,247,.2); }
+.fll-team-row-name { font-size:.88rem;font-weight:600;color:#e2d9f3; }
+.fll-team-row-arr  { color:rgba(168,85,247,.55);font-size:1.1rem;font-weight:700;line-height:1; }
+
+/* Team detail view */
+.fll-detail-back {
+  display:inline-flex;align-items:center;
+  background:none;border:1px solid rgba(168,85,247,.2);color:rgba(196,181,253,.65);
+  font-size:.78rem;font-weight:600;padding:.26rem .72rem;border-radius:999px;
+  cursor:pointer;transition:color .15s,border-color .15s;margin-bottom:.6rem;
+}
+.fll-detail-back:hover { color:#c4b5fd;border-color:rgba(168,85,247,.45); }
+.fll-detail-name {
+  font-size:1.15rem;font-weight:800;color:#f0e6ff;
+  padding-bottom:.5rem;border-bottom:1px solid rgba(168,85,247,.14);margin-bottom:.15rem;
+}
+
+/* ── LANG SWITCHER IN TC TOPBAR ────────────────────────────────── */
+.tc-lang-row--inline { display:flex;gap:.28rem;flex-shrink:0; }
+.tc-lang-btn {
+  padding:.24rem .6rem;border-radius:999px;border:1px solid rgba(168,85,247,.2);
+  background:transparent;color:rgba(216,180,254,.45);font-size:.68rem;font-weight:900;
+  letter-spacing:.07em;cursor:pointer;transition:all .15s;white-space:nowrap;
+}
+.tc-lang-btn:hover { color:#c4b5fd;border-color:rgba(168,85,247,.45); }
+.tc-lang-btn--on { background:rgba(168,85,247,.18);color:#e2d9f3;border-color:rgba(168,85,247,.5); }
