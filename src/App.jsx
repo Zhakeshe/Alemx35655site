@@ -2892,31 +2892,239 @@ function ExploreTab() {
   );
 }
 
-// ── FTC TAB — 2 YouTube streams ───────────────────────────────────────
+// ── FTC JUDGING DATA (Tech Cup — Almaty Arena, 30.06.2026) ───────────
+const FTC_JUDGING_TC = [
+  { time:"12:00–12:15", r:{1:{name:"MLP",num:19163},2:{name:"Bil.Barbie",num:25272},3:{name:"Panheya(˔͟˔)",num:21058},4:{name:"POINT",num:22958}} },
+  { time:"12:15–12:30", r:{1:{name:"Antares",num:24924},2:{name:"Y-Tech",num:29112},3:{name:"AMD",num:28588},4:{name:"URAN 92",num:25300}} },
+  { time:"12:30–12:45", r:{1:{name:"RAI",num:26053},2:{name:"SANA",num:24697},3:{name:"Future vortex",num:30326},4:{name:"LionTech",num:34066}} },
+  { time:"12:45–13:00", r:{1:{name:"North Star",num:21094},2:{name:"TGJ",num:33033},3:{name:"Red Lotus",num:28862},4:{name:"Nemeziz",num:28689}} },
+  { time:"13:00–14:00", lunch:true },
+  { time:"14:00–14:15", r:{1:{name:"Qazaq style",num:31881},2:{name:"ThunderBolts",num:32717},3:{name:"Celestial",num:32728},4:{name:"Gambit",num:33929}} },
+  { time:"14:15–14:30", r:{1:{name:"EQUINITY",num:33420},2:{name:"Sirius",num:33422},3:{name:"Uly Dala",num:33444},4:{name:"Akita",num:33483}} },
+  { time:"14:30–14:45", r:{1:{name:"AlemX",num:33655},2:{name:"Atomic Heart",num:33680},3:{name:"SunRise",num:33833},4:{name:"Berkut",num:34800}} },
+  { time:"14:45–15:00", r:{1:{name:"NazarX",num:34241},2:{name:"OZGE",num:34350},3:{name:"DNA",num:34158},4:{name:"STAR LINE",num:29626}} },
+];
+
+// ── FTC JUDGING FULL SCHEDULE ──────────────────────────────────────────
+function FTCJudgingSchedule() {
+  const { lang } = useLang();
+  const lblT = lang==="kz"?"Уақыт":lang==="ru"?"Время":"Time";
+  const lblR = n => lang==="kz"?`Бөлме ${n}`:lang==="ru"?`Комн. ${n}`:`Room ${n}`;
+  const lblL = lang==="kz"?"🍽 Түскі үзіліс":lang==="ru"?"🍽 Обеденный перерыв":"🍽 Lunch break";
+  return (
+    <div className="fll-sched-wrap">
+      <div className="fll-sched-scroll">
+        <div className="fll-sched-table fll-sched-table--4">
+          <div className="fll-sched-head">
+            <span>{lblT}</span>{[1,2,3,4].map(n => <span key={n}>{lblR(n)}</span>)}
+          </div>
+          {FTC_JUDGING_TC.map((slot, i) =>
+            slot.lunch ? (
+              <div key={i} className="fll-sched-row fll-sched-row--lunch">
+                <span className="fll-sched-time">{slot.time}</span>
+                <span className="fll-sched-lunch" style={{gridColumn:"2 / -1"}}>{lblL}</span>
+              </div>
+            ) : (
+              <div key={i} className="fll-sched-row">
+                <span className="fll-sched-time">{slot.time}</span>
+                {[1,2,3,4].map(n => (
+                  <span key={n} className={`fll-sched-cell${slot.r[n]?.name==="AlemX"?" fll-sched-cell--highlight":""}`}>
+                    {slot.r[n] ? <>{slot.r[n].name}<em className="ftc-cell-num"> #{slot.r[n].num}</em></> : "—"}
+                  </span>
+                ))}
+              </div>
+            )
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── FTC TEAM SEARCH (local schedule + FTC Scout API) ──────────────────
+function FTCTeamSearch() {
+  const { lang } = useLang();
+  const [query, setQuery]       = useState("");
+  const [selected, setSelected] = useState(null);
+  const [scoutData, setScoutData] = useState(null);
+  const [scoutLoading, setScoutLoading] = useState(false);
+
+  const allTeams = useMemo(() => {
+    const list = [];
+    FTC_JUDGING_TC.forEach(slot => {
+      if (slot.lunch) return;
+      [1,2,3,4].forEach(n => { if (slot.r[n]) list.push({ ...slot.r[n], time: slot.time, room: n }); });
+    });
+    return list;
+  }, []);
+
+  const qn = useMemo(() => fllNorm(query), [query]);
+
+  const matchingTeams = useMemo(() => {
+    if (!qn) return [];
+    return allTeams.filter(t =>
+      fllNorm(t.name).includes(qn) || String(t.num).includes(query.trim())
+    );
+  }, [qn, query, allTeams]);
+
+  const openTeam = async (team) => {
+    setSelected(team);
+    setScoutData(null);
+    setScoutLoading(true);
+    try {
+      const d = await ftcGql(Q_TEAM, { n: team.num, s: FTC_SEASON });
+      setScoutData(d.teamByNumber ?? null);
+    } catch (_) {
+      setScoutData(null);
+    } finally {
+      setScoutLoading(false);
+    }
+  };
+
+  const L = {
+    ph:   lang==="kz"?"Команда атын немесе нөмірін іздеу...":lang==="ru"?"Поиск по названию или номеру...":"Search by name or number...",
+    hint: lang==="kz"?"Команда атын жазыңыз — тізімнен таңдаңыз":lang==="ru"?"Введите название — выберите из списка":"Type a name — select from the list",
+    nf:   lang==="kz"?"Команда табылмады":lang==="ru"?"Команда не найдена":"Team not found",
+    back: lang==="kz"?"← Артқа":lang==="ru"?"← Назад":"← Back",
+    J:    lang==="kz"?"⏰ Бағалау уақыты":lang==="ru"?"⏰ Время судейства":"⏰ Judging slot",
+    R:    lang==="kz"?"Бөлме":lang==="ru"?"Комната":"Room",
+    stats:lang==="kz"?"📊 FTC Scout статистикасы":lang==="ru"?"📊 Статистика FTC Scout":"📊 FTC Scout stats",
+    load: lang==="kz"?"Жүктелуде...":lang==="ru"?"Загрузка...":"Loading...",
+    na:   lang==="kz"?"Деректер жоқ":lang==="ru"?"Нет данных":"No data",
+  };
+
+  if (selected) {
+    const qs = scoutData?.quickStats;
+    return (
+      <div className="fll-search-wrap">
+        <button className="fll-detail-back" onClick={() => { setSelected(null); setScoutData(null); }}>{L.back}</button>
+        <div className="fll-detail-name">{selected.name} <span className="ftc-detail-num">#{selected.num}</span></div>
+
+        <div className="fll-hit-section">
+          <div className="fll-hit-section-title">{L.J}</div>
+          <div className="fll-hit-card fll-hit-card--judge">
+            <div className="fll-hit-left">
+              <div className="fll-hit-time">{selected.time}</div>
+              <div className="fll-hit-day">30.06</div>
+            </div>
+            <div className="fll-hit-right">
+              <div className="fll-hit-field">{L.R} {selected.room} · <strong>{selected.name}</strong></div>
+            </div>
+          </div>
+        </div>
+
+        <div className="fll-hit-section">
+          <div className="fll-hit-section-title">{L.stats}</div>
+          {scoutLoading ? (
+            <div className="ftc-scout-loading">{L.load}</div>
+          ) : qs ? (
+            <div className="ftc-scout-stats">
+              {[
+                {label:"Total OPR",v:qs.tot?.value,rank:qs.tot?.rank,col:"#a855f7"},
+                {label:"Auto OPR", v:qs.auto?.value,rank:qs.auto?.rank,col:"#7c3aed"},
+                {label:"Teleop OPR",v:qs.dc?.value,rank:qs.dc?.rank,col:"#c084fc"},
+                {label:"Endgame OPR",v:qs.eg?.value,rank:qs.eg?.rank,col:"#f472b6"},
+              ].map(({label,v,rank,col}) => (
+                <div key={label} className="ftc-scout-stat-row">
+                  <span className="ftc-scout-stat-label">{label}</span>
+                  <span className="ftc-scout-stat-value" style={{color:col}}>
+                    {v != null ? v.toFixed(2) : "—"}
+                  </span>
+                  {rank != null && <span className="ftc-scout-stat-rank">#{rank}</span>}
+                </div>
+              ))}
+              {scoutData?.location && (
+                <div className="ftc-scout-loc">
+                  📍 {[scoutData.location.city, scoutData.location.country].filter(Boolean).join(", ")}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="ftc-scout-loading">{L.na}</div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="fll-search-wrap">
+      <div className="tc-search-bar fll-search-bar">
+        <svg className="tc-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input className="tc-search-input fll-input" type="text" placeholder={L.ph}
+          value={query} onChange={e => setQuery(e.target.value)} autoComplete="off" spellCheck={false} />
+      </div>
+      {!query && <div className="fll-search-hint">{L.hint}</div>}
+      {query && (
+        <AnimatePresence mode="wait">
+          <motion.div key={qn||"_"} initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} exit={{opacity:0}} transition={{duration:0.18}}>
+            {matchingTeams.length === 0
+              ? <div className="fll-not-found">{L.nf}</div>
+              : <div className="fll-team-list">
+                  {matchingTeams.map(team => (
+                    <button key={team.num} className="fll-team-row" onClick={() => openTeam(team)}>
+                      <span className="fll-team-row-name">{team.name}</span>
+                      <span className="fll-team-row-num">#{team.num}</span>
+                      <span className="fll-team-row-arr">›</span>
+                    </button>
+                  ))}
+                </div>
+            }
+          </motion.div>
+        </AnimatePresence>
+      )}
+    </div>
+  );
+}
+
+// ── FTC TAB — Search + Schedule + Streams ─────────────────────────────
 function FTCTab({ t }) {
+  const { lang } = useLang();
+  const [sub, setSub] = useState("search");
+  const subs = [
+    { key:"search",   lbl: lang==="kz"?"Іздеу":lang==="ru"?"Поиск":"Search" },
+    { key:"schedule", lbl: lang==="kz"?"Кесте":lang==="ru"?"Расписание":"Schedule" },
+    { key:"streams",  lbl: lang==="kz"?"Стрим":lang==="ru"?"Стримы":"Streams" },
+  ];
   const streams = [
     { title:"FTC Stream 1", url:FTC_STREAM1_URL },
     { title:"FTC Stream 2", url:FTC_STREAM2_URL },
   ];
   return (
-    <div className="ftc-streams-wrap">
-      {streams.map((s, i) => (
-        <div key={i} className="ftc-stream-block">
-          {s.url
-            ? (
-              <div className="tc-embed__frame-wrap">
-                <iframe className="tc-embed__frame" src={tcEmbedUrl(s.url)} title={s.title}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
-              </div>
-            ) : (
-              <div className="tc-embed-soon">
-                <span className="tc-embed-soon__label">{s.title}</span>
-                <p className="tc-embed-soon__msg">{t("tc.stream.soon")}</p>
-              </div>
-            )
-          }
-        </div>
-      ))}
+    <div className="fll-tab-wrap">
+      <div className="fll-subtabs">
+        {subs.map(s => (
+          <button key={s.key} className={`fll-subtab${sub===s.key?" fll-subtab--on":""}`} onClick={() => setSub(s.key)}>{s.lbl}</button>
+        ))}
+      </div>
+      <AnimatePresence mode="wait">
+        <motion.div key={sub} initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-8}} transition={{duration:0.22}}>
+          {sub==="search" ? <FTCTeamSearch /> :
+           sub==="schedule" ? <FTCJudgingSchedule /> : (
+            <div className="ftc-streams-wrap">
+              {streams.map((s, i) => (
+                <div key={i} className="ftc-stream-block">
+                  {s.url
+                    ? (
+                      <div className="tc-embed__frame-wrap">
+                        <iframe className="tc-embed__frame" src={tcEmbedUrl(s.url)} title={s.title}
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
+                      </div>
+                    ) : (
+                      <div className="tc-embed-soon">
+                        <span className="tc-embed-soon__label">{s.title}</span>
+                        <p className="tc-embed-soon__msg">{t("tc.stream.soon")}</p>
+                      </div>
+                    )
+                  }
+                </div>
+              ))}
+            </div>
+          )}
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 }
