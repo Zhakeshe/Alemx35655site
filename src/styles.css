@@ -1980,3 +1980,48 @@ img { display: block; max-width: 100%; }
 .rules-line       { font-size:.87rem;line-height:1.6;color:#e2d9f3; }
 .rules-spacer     { height:.4rem; }
 .rules-video-wrap { margin-bottom:.25rem; }
+
+/* ── NOW PLAYING BANNER ────────────────────────────────────────── */
+.np-wrap  { display:flex;flex-direction:column;gap:.55rem;margin-bottom:.65rem; }
+.np-card  {
+  background:rgba(168,85,247,.07);border:1px solid rgba(168,85,247,.2);
+  border-radius:12px;padding:.65rem .85rem;display:flex;flex-direction:column;gap:.45rem;
+}
+.np-card--judge { background:rgba(34,197,94,.05);border-color:rgba(34,197,94,.22); }
+.np-card-label  {
+  font-size:.62rem;font-weight:900;letter-spacing:.13em;text-transform:uppercase;
+  color:rgba(168,85,247,.65);
+}
+.np-card--judge .np-card-label { color:rgba(34,197,94,.65); }
+.np-section      { display:flex;flex-direction:column;gap:.3rem; }
+.np-section + .np-section { margin-top:.2rem;padding-top:.4rem;border-top:1px solid rgba(255,255,255,.06); }
+.np-row          { display:flex;align-items:center;gap:.4rem;flex-wrap:wrap; }
+.np-badge        {
+  font-size:.58rem;font-weight:900;letter-spacing:.09em;text-transform:uppercase;
+  padding:.14rem .45rem;border-radius:5px;white-space:nowrap;
+}
+.np-badge--now   { background:rgba(239,68,68,.18);color:#fca5a5;border:1px solid rgba(239,68,68,.32); }
+.np-badge--next  { background:rgba(168,85,247,.18);color:#c4b5fd;border:1px solid rgba(168,85,247,.32); }
+.np-badge--soon  { background:rgba(251,191,36,.13);color:#fde68a;border:1px solid rgba(251,191,36,.28); }
+.np-time         { font-size:.76rem;font-weight:600;color:#c4b5fd; }
+.np-card--judge .np-time { color:rgba(134,239,172,.85); }
+.np-teams        { display:flex;flex-wrap:wrap;gap:.28rem; }
+.np-chip         {
+  font-size:.7rem;padding:.16rem .42rem;border-radius:5px;
+  background:rgba(168,85,247,.12);color:#d4c8ee;border:1px solid rgba(168,85,247,.14);
+  white-space:nowrap;
+}
+.np-card--judge .np-chip {
+  background:rgba(34,197,94,.09);color:rgba(134,239,172,.85);border-color:rgba(34,197,94,.14);
+}
+.np-rem  { font-size:.7rem;color:var(--muted);border-top:1px solid rgba(255,255,255,.06);padding-top:.3rem; }
+
+/* "before you" / status badge in search results */
+.np-before       {
+  display:inline-block;font-size:.7rem;padding:.16rem .48rem;border-radius:6px;
+  background:rgba(168,85,247,.11);color:#c4b5fd;border:1px solid rgba(168,85,247,.2);
+  margin-top:.25rem;
+}
+.np-before--now  { background:rgba(239,68,68,.13);color:#fca5a5;border-color:rgba(239,68,68,.28); }
+.np-before--next { background:rgba(34,197,94,.09);color:rgba(134,239,172,.9);border-color:rgba(34,197,94,.2); }
+.fll-hit-card--past { opacity:.45; }

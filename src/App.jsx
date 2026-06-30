@@ -2186,6 +2186,30 @@ function FTCScoutPage({ onClose }) {
 
 // ── TECH CUP PAGE ─────────────────────────────────────────────────────
 
+// ── TIME HELPERS ──────────────────────────────────────────────────────
+function parseSlotMs(dayStr, timeRange) {
+  const parts = timeRange.split(/[–\-]/);
+  const [dd, mm] = dayStr.split(".");
+  const mo = Number(mm) - 1, d = Number(dd);
+  const toMs = hhmm => { const [h, m] = hhmm.trim().split(":").map(Number); return new Date(2026, mo, d, h, m).getTime(); };
+  return { start: toMs(parts[0]), end: toMs(parts[1]) };
+}
+
+function useNow(interval = 20000) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => { const id = setInterval(() => setNow(Date.now()), interval); return () => clearInterval(id); }, [interval]);
+  return now;
+}
+
+function fmtMs(ms, lang) {
+  const min = Math.ceil(ms / 60000);
+  if (min <= 0) return "";
+  const h = Math.floor(min / 60), m = min % 60;
+  if (lang === "kz") return h ? `~${h} сағ${m ? ` ${m} мин` : ""}` : `~${m} мин`;
+  if (lang === "ru") return h ? `~${h} ч${m ? ` ${m} мин` : ""}` : `~${m} мин`;
+  return h ? `~${h}h${m ? ` ${m}m` : ""}` : `~${m}m`;
+}
+
 // Normalize team name for fuzzy search
 const fllNorm = s => s.toLowerCase().replace(/[\s\-\/\.]+/g, "");
 
@@ -2302,28 +2326,44 @@ function tcEmbedUrl(raw) {
 function FLLTeamSearch() {
   const { lang } = useLang();
   const [query, setQuery] = useState("");
+  const now = useNow(30000);
   const qn = useMemo(() => fllNorm(query), [query]);
+
+  const gameSlotsTimed = useMemo(() =>
+    FLL_GAME_SLOTS.map(s => ({ ...s, ...parseSlotMs(s.day, s.time) })), []);
+  const judgeSlotsTimed = useMemo(() =>
+    FLL_JUDGING.map(s => ({ ...s, ...parseSlotMs(s.day, s.time) })), []);
 
   const gameHits = useMemo(() => {
     if (!qn) return [];
-    return FLL_GAME_SLOTS.map(slot => {
+    return gameSlotsTimed.map(slot => {
       const matched = slot.f.reduce((acc, tm, i) => {
         if (tm && fllNorm(tm).includes(qn)) acc.push(i + 1);
         return acc;
       }, []);
-      return matched.length ? { ...slot, matched } : null;
+      if (!matched.length) return null;
+      const isNow  = now >= slot.start && now < slot.end;
+      const isPast = now >= slot.end;
+      const slotsBefore = gameSlotsTimed.filter(s => s.start > now && s.start < slot.start).length;
+      const msBefore = Math.max(0, slot.start - now);
+      return { ...slot, matched, isNow, isPast, slotsBefore, msBefore };
     }).filter(Boolean);
-  }, [qn]);
+  }, [qn, gameSlotsTimed, now]);
 
   const judgeHits = useMemo(() => {
     if (!qn) return [];
-    return FLL_JUDGING.map(slot => {
+    return judgeSlotsTimed.map(slot => {
       const matched = Object.entries(slot.r)
         .filter(([, tm]) => tm && fllNorm(tm).includes(qn))
         .map(([room]) => room);
-      return matched.length ? { ...slot, matched } : null;
+      if (!matched.length) return null;
+      const isNow  = now >= slot.start && now < slot.end;
+      const isPast = now >= slot.end;
+      const slotsBefore = judgeSlotsTimed.filter(s => s.start > now && s.start < slot.start).length;
+      const msBefore = Math.max(0, slot.start - now);
+      return { ...slot, matched, isNow, isPast, slotsBefore, msBefore };
     }).filter(Boolean);
-  }, [qn]);
+  }, [qn, judgeSlotsTimed, now]);
 
   const ph   = lang==="kz" ? "Команда атын іздеу..." : lang==="ru" ? "Поиск команды..." : "Search team...";
   const hint = lang==="kz" ? "Команда атын жазыңыз — ойын уақыты мен бағалау кестесі шығады"
@@ -2334,6 +2374,16 @@ function FLLTeamSearch() {
   const lblF  = lang==="kz" ? "Алаң" : lang==="ru" ? "Поле" : "Field";
   const lblR  = lang==="kz" ? "Бөлме" : lang==="ru" ? "Комната" : "Room";
   const lblNF = lang==="kz" ? "Команда табылмады" : lang==="ru" ? "Команда не найдена" : "Team not found";
+
+  const slotBadge = hit => {
+    if (hit.isNow)  return <span className="np-before np-before--now">{lang==="kz"?"🔴 Қазір ойнайды!":lang==="ru"?"🔴 Играет сейчас!":"🔴 Playing now!"}</span>;
+    if (hit.isPast) return null;
+    if (hit.slotsBefore === 0) return <span className="np-before np-before--next">{lang==="kz"?"⏭ Сіздер келесісіздер!":lang==="ru"?"⏭ Вы следующие!":"⏭ You're next!"}</span>;
+    const txt = lang==="kz" ? `${hit.slotsBefore} слот алда · ${fmtMs(hit.msBefore,lang)}`
+              : lang==="ru" ? `${hit.slotsBefore} сл. до вас · ${fmtMs(hit.msBefore,lang)}`
+              : `${hit.slotsBefore} slots ahead · ${fmtMs(hit.msBefore,lang)}`;
+    return <span className="np-before">{txt}</span>;
+  };
 
   return (
     <div className="fll-search-wrap">
@@ -2356,7 +2406,7 @@ function FLLTeamSearch() {
                     <div className="fll-hit-section">
                       <div className="fll-hit-section-title">{lblG}</div>
                       {gameHits.map((slot, i) => (
-                        <div key={i} className="fll-hit-card fll-hit-card--game">
+                        <div key={i} className={`fll-hit-card fll-hit-card--game${slot.isPast?" fll-hit-card--past":""}`}>
                           <div className="fll-hit-left">
                             <div className="fll-hit-time">{slot.time}</div>
                             <div className="fll-hit-day">{slot.day}</div>
@@ -2366,6 +2416,7 @@ function FLLTeamSearch() {
                             {slot.matched.map(fn => (
                               <div key={fn} className="fll-hit-field">{lblF} {fn} · <strong>{slot.f[fn-1]}</strong></div>
                             ))}
+                            {slotBadge(slot)}
                           </div>
                         </div>
                       ))}
@@ -2375,7 +2426,7 @@ function FLLTeamSearch() {
                     <div className="fll-hit-section">
                       <div className="fll-hit-section-title">{lblJ}</div>
                       {judgeHits.map((slot, i) => (
-                        <div key={i} className="fll-hit-card fll-hit-card--judge">
+                        <div key={i} className={`fll-hit-card fll-hit-card--judge${slot.isPast?" fll-hit-card--past":""}`}>
                           <div className="fll-hit-left">
                             <div className="fll-hit-time">{slot.time}</div>
                             <div className="fll-hit-day">{slot.day}</div>
@@ -2384,6 +2435,7 @@ function FLLTeamSearch() {
                             {slot.matched.map(rn => (
                               <div key={rn} className="fll-hit-field">{lblR} {rn} · <strong>{slot.r[rn]}</strong></div>
                             ))}
+                            {slotBadge(slot)}
                           </div>
                         </div>
                       ))}
@@ -2403,17 +2455,26 @@ function FLLTeamSearch() {
 function ExploreTeamSearch() {
   const { lang } = useLang();
   const [query, setQuery] = useState("");
+  const now = useNow(30000);
   const qn = useMemo(() => fllNorm(query), [query]);
+
+  const judgeSlotsTimed = useMemo(() =>
+    EXPLORE_JUDGING.map(s => ({ ...s, ...parseSlotMs("30.06", s.time) })), []);
 
   const judgeHits = useMemo(() => {
     if (!qn) return [];
-    return EXPLORE_JUDGING.map(slot => {
+    return judgeSlotsTimed.map(slot => {
       const matched = Object.entries(slot.r)
         .filter(([, tm]) => tm && fllNorm(tm).includes(qn))
         .map(([room]) => room);
-      return matched.length ? { ...slot, matched } : null;
+      if (!matched.length) return null;
+      const isNow  = now >= slot.start && now < slot.end;
+      const isPast = now >= slot.end;
+      const slotsBefore = judgeSlotsTimed.filter(s => s.start > now && s.start < slot.start).length;
+      const msBefore = Math.max(0, slot.start - now);
+      return { ...slot, matched, isNow, isPast, slotsBefore, msBefore };
     }).filter(Boolean);
-  }, [qn]);
+  }, [qn, judgeSlotsTimed, now]);
 
   const pitHit = useMemo(() => {
     if (!qn) return null;
@@ -2428,6 +2489,16 @@ function ExploreTeamSearch() {
   const lblP  = lang==="kz" ? "📍 Пит нөмірі" : lang==="ru" ? "📍 Пит номер" : "📍 Pit #";
   const lblR  = lang==="kz" ? "Бөлме" : lang==="ru" ? "Комната" : "Room";
   const lblNF = lang==="kz" ? "Команда табылмады" : lang==="ru" ? "Команда не найдена" : "Team not found";
+
+  const slotBadge = hit => {
+    if (hit.isNow)  return <span className="np-before np-before--now">{lang==="kz"?"🔴 Қазір бағалауда!":lang==="ru"?"🔴 Сейчас судейство!":"🔴 Being judged now!"}</span>;
+    if (hit.isPast) return null;
+    if (hit.slotsBefore === 0) return <span className="np-before np-before--next">{lang==="kz"?"⏭ Сіздер келесісіздер!":lang==="ru"?"⏭ Вы следующие!":"⏭ You're next!"}</span>;
+    const txt = lang==="kz" ? `${hit.slotsBefore} сессия алда · ${fmtMs(hit.msBefore,lang)}`
+              : lang==="ru" ? `${hit.slotsBefore} сесс. до вас · ${fmtMs(hit.msBefore,lang)}`
+              : `${hit.slotsBefore} sessions ahead · ${fmtMs(hit.msBefore,lang)}`;
+    return <span className="np-before">{txt}</span>;
+  };
 
   return (
     <div className="fll-search-wrap">
@@ -2459,7 +2530,7 @@ function ExploreTeamSearch() {
                     <div className="fll-hit-section">
                       <div className="fll-hit-section-title">{lblJ}</div>
                       {judgeHits.map((slot, i) => (
-                        <div key={i} className="fll-hit-card fll-hit-card--judge">
+                        <div key={i} className={`fll-hit-card fll-hit-card--judge${slot.isPast?" fll-hit-card--past":""}`}>
                           <div className="fll-hit-left">
                             <div className="fll-hit-time">{slot.time}</div>
                             <div className="fll-hit-day">30.06</div>
@@ -2468,6 +2539,7 @@ function ExploreTeamSearch() {
                             {slot.matched.map(rn => (
                               <div key={rn} className="fll-hit-field">{lblR} {rn} · <strong>{slot.r[rn]}</strong></div>
                             ))}
+                            {slotBadge(slot)}
                           </div>
                         </div>
                       ))}
@@ -2479,6 +2551,124 @@ function ExploreTeamSearch() {
           </motion.div>
         </AnimatePresence>
       )}
+    </div>
+  );
+}
+
+// ── FLL LIVE BANNER ───────────────────────────────────────────────────
+function FLLLiveBanner() {
+  const { lang } = useLang();
+  const now = useNow(20000);
+
+  const gameSlots = useMemo(() => FLL_GAME_SLOTS.map(s => ({ ...s, ...parseSlotMs(s.day, s.time) })), []);
+  const judgeSlots = useMemo(() => FLL_JUDGING.map(s => ({ ...s, ...parseSlotMs(s.day, s.time) })), []);
+
+  const curGame  = gameSlots.find(s => now >= s.start && now < s.end);
+  const nextGame = gameSlots.find(s => s.start > now);
+  const remGame  = gameSlots.filter(s => s.start > now).length;
+  const curJudge  = judgeSlots.find(s => now >= s.start && now < s.end);
+  const nextJudge = judgeSlots.find(s => s.start > now);
+  const remJudge  = judgeSlots.filter(s => s.start > now).length;
+
+  if (!curGame && !nextGame && !curJudge && !nextJudge) return null;
+
+  const lbl = {
+    now:   lang==="kz"?"🔴 ҚАЗІР":lang==="ru"?"🔴 СЕЙЧАС":"🔴 NOW",
+    next:  lang==="kz"?"⏭ КЕЛЕСІ":lang==="ru"?"⏭ СЛЕДУЮЩИЙ":"⏭ NEXT",
+    soon:  lang==="kz"?"⏰ Жақында":lang==="ru"?"⏰ Скоро":"⏰ Soon",
+    game:  lang==="kz"?"🤖 Робот Ойыны":"🤖 Robot Game",
+    judge: lang==="kz"?"🏆 Бағалау":lang==="ru"?"🏆 Судейство":"🏆 Judging",
+    F: lang==="kz"?"А":"F",
+    R: lang==="kz"?"Б":lang==="ru"?"К":"R",
+  };
+
+  const GameSection = ({ slot, badge }) => !slot ? null : (
+    <div className="np-section">
+      <div className="np-row">
+        <span className={`np-badge np-badge--${badge}`}>{lbl[badge]}</span>
+        <span className="np-time">{slot.time} · {FLL_RND[slot.rnd]?.[lang] ?? slot.rnd}</span>
+      </div>
+      <div className="np-teams">
+        {slot.f.map((tm, i) => tm ? <span key={i} className="np-chip">{lbl.F}{i+1}·{tm}</span> : null)}
+      </div>
+    </div>
+  );
+
+  const JudgeSection = ({ slot, badge }) => !slot ? null : (
+    <div className="np-section">
+      <div className="np-row">
+        <span className={`np-badge np-badge--${badge}`}>{lbl[badge]}</span>
+        <span className="np-time">{slot.time}</span>
+      </div>
+      <div className="np-teams">
+        {[1,2,3,4].map(n => slot.r[n] ? <span key={n} className="np-chip">{lbl.R}{n}·{slot.r[n]}</span> : null)}
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="np-wrap">
+      {(curGame || nextGame) && (
+        <div className="np-card">
+          <div className="np-card-label">{lbl.game}</div>
+          {curGame ? <GameSection slot={curGame} badge="now" /> : <GameSection slot={nextGame} badge="soon" />}
+          {curGame && nextGame && <GameSection slot={nextGame} badge="next" />}
+          {remGame > 0 && <div className="np-rem">{lang==="kz"?`Қалды: ${remGame} слот`:lang==="ru"?`Осталось: ${remGame} сл.`:`Left: ${remGame} slots`}</div>}
+        </div>
+      )}
+      {(curJudge || nextJudge) && (
+        <div className="np-card np-card--judge">
+          <div className="np-card-label">{lbl.judge}</div>
+          {curJudge ? <JudgeSection slot={curJudge} badge="now" /> : <JudgeSection slot={nextJudge} badge="soon" />}
+          {curJudge && nextJudge && <JudgeSection slot={nextJudge} badge="next" />}
+          {remJudge > 0 && <div className="np-rem">{lang==="kz"?`Қалды: ${remJudge} сессия`:lang==="ru"?`Осталось: ${remJudge} сесс.`:`Left: ${remJudge} sessions`}</div>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── EXPLORE LIVE BANNER ───────────────────────────────────────────────
+function ExploreLiveBanner() {
+  const { lang } = useLang();
+  const now = useNow(20000);
+
+  const judgeSlots = useMemo(() => EXPLORE_JUDGING.map(s => ({ ...s, ...parseSlotMs("30.06", s.time) })), []);
+
+  const curJudge  = judgeSlots.find(s => now >= s.start && now < s.end);
+  const nextJudge = judgeSlots.find(s => s.start > now);
+  const remJudge  = judgeSlots.filter(s => s.start > now).length;
+
+  if (!curJudge && !nextJudge) return null;
+
+  const lbl = {
+    now:   lang==="kz"?"🔴 ҚАЗІР":lang==="ru"?"🔴 СЕЙЧАС":"🔴 NOW",
+    next:  lang==="kz"?"⏭ КЕЛЕСІ":lang==="ru"?"⏭ СЛЕДУЮЩИЙ":"⏭ NEXT",
+    soon:  lang==="kz"?"⏰ Жақында":lang==="ru"?"⏰ Скоро":"⏰ Soon",
+    judge: lang==="kz"?"🏆 Бағалау":lang==="ru"?"🏆 Судейство":"🏆 Judging",
+    R: lang==="kz"?"Б":lang==="ru"?"К":"R",
+  };
+
+  const Section = ({ slot, badge }) => !slot ? null : (
+    <div className="np-section">
+      <div className="np-row">
+        <span className={`np-badge np-badge--${badge}`}>{lbl[badge]}</span>
+        <span className="np-time">{slot.time}</span>
+      </div>
+      <div className="np-teams">
+        {[1,2,3,4].map(n => slot.r[n] ? <span key={n} className="np-chip">{lbl.R}{n}·{slot.r[n]}</span> : null)}
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="np-wrap">
+      <div className="np-card np-card--judge">
+        <div className="np-card-label">{lbl.judge}</div>
+        {curJudge ? <Section slot={curJudge} badge="now" /> : <Section slot={nextJudge} badge="soon" />}
+        {curJudge && nextJudge && <Section slot={nextJudge} badge="next" />}
+        {remJudge > 0 && <div className="np-rem">{lang==="kz"?`Қалды: ${remJudge} сессия`:lang==="ru"?`Осталось: ${remJudge} сесс.`:`Left: ${remJudge} sessions`}</div>}
+      </div>
     </div>
   );
 }
@@ -2611,6 +2801,7 @@ function FLLTab() {
   ];
   return (
     <div className="fll-tab-wrap">
+      <FLLLiveBanner />
       <div className="fll-subtabs">
         {subs.map(s => (
           <button key={s.key} className={`fll-subtab${sub===s.key?" fll-subtab--on":""}`} onClick={() => setSub(s.key)}>{s.lbl}</button>
@@ -2638,6 +2829,7 @@ function ExploreTab() {
   ];
   return (
     <div className="fll-tab-wrap">
+      <ExploreLiveBanner />
       <div className="fll-subtabs">
         {subs.map(s => (
           <button key={s.key} className={`fll-subtab${sub===s.key?" fll-subtab--on":""}`} onClick={() => setSub(s.key)}>{s.lbl}</button>
