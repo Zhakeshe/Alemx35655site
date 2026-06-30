@@ -2075,3 +2075,58 @@ img { display: block; max-width: 100%; }
 }
 .tc-lang-btn:hover { color:#c4b5fd;border-color:rgba(168,85,247,.45); }
 .tc-lang-btn--on { background:rgba(168,85,247,.18);color:#e2d9f3;border-color:rgba(168,85,247,.5); }
+
+/* ── MY TEAM TAB ─────────────────────────────────────────────────── */
+.my-team-wrap { display:flex;flex-direction:column;gap:.7rem; }
+.my-team-pick-title {
+  font-size:.7rem;font-weight:900;letter-spacing:.13em;text-transform:uppercase;
+  color:rgba(168,85,247,.6);margin-bottom:.1rem;
+}
+.my-team-list {
+  max-height:62vh;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+}
+.my-team-header {
+  display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;
+  padding:.65rem .9rem;border-radius:13px;
+  background:rgba(168,85,247,.09);border:1px solid rgba(168,85,247,.24);
+}
+.my-team-name {
+  font-size:1.05rem;font-weight:800;color:#f0e6ff;flex:1;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;
+}
+.my-team-action {
+  font-size:.7rem;font-weight:700;padding:.24rem .7rem;border-radius:999px;
+  border:1px solid rgba(168,85,247,.24);background:transparent;color:rgba(196,181,253,.65);
+  cursor:pointer;transition:all .15s;flex-shrink:0;
+}
+.my-team-action:hover { background:rgba(168,85,247,.14);color:#c4b5fd;border-color:rgba(168,85,247,.5); }
+
+/* Countdown card */
+.my-team-cd {
+  border-radius:14px;padding:1.1rem 1.2rem;text-align:center;
+  background:rgba(168,85,247,.08);border:1px solid rgba(168,85,247,.22);
+  display:flex;flex-direction:column;align-items:center;gap:.3rem;
+}
+.my-team-cd--live {
+  background:rgba(239,68,68,.07);border-color:rgba(239,68,68,.3);
+  animation:my-cd-pulse 2s ease-in-out infinite;
+}
+.my-team-cd--done { background:rgba(34,197,94,.05);border-color:rgba(34,197,94,.18); }
+@keyframes my-cd-pulse {
+  0%,100% { border-color:rgba(239,68,68,.3); }
+  50%      { border-color:rgba(239,68,68,.65);box-shadow:0 0 18px rgba(239,68,68,.14); }
+}
+.my-team-cd-label {
+  font-size:.68rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+  color:rgba(196,181,253,.6);
+}
+.my-team-cd--live .my-team-cd-label { color:#fca5a5; }
+.my-team-cd--done .my-team-cd-label { color:rgba(134,239,172,.7); }
+.my-team-cd-event { font-size:.88rem;font-weight:700;color:#e2d9f3; }
+.my-team-cd-timer {
+  font-family:"JetBrains Mono",monospace,sans-serif;
+  font-size:2.8rem;font-weight:900;color:#e879f9;line-height:1;
+  text-shadow:0 0 28px rgba(232,121,249,.45);letter-spacing:.04em;
+  margin-top:.1rem;
+}

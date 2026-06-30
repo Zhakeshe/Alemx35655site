@@ -2313,6 +2313,7 @@ const TC_TABS = [
   { key:"explore", label:"FLL Explore" },
   { key:"ftc",     label:"FTC" },
   { key:"rules" },
+  { key:"myteam" },
   { key:"chat",    label:"💬 Чат" },
 ];
 
@@ -3006,10 +3007,237 @@ function RulesTab({ t }) {
   );
 }
 
+// ── MY TEAM TAB ───────────────────────────────────────────────────────
+function MyTeamTab() {
+  const { lang } = useLang();
+  const nowSec = useNow(1000);
+
+  const [myTeam, setMyTeam] = useState(() => {
+    try { return localStorage.getItem("tc-my-team") || null; } catch { return null; }
+  });
+  const [query, setQuery] = useState("");
+  const qn = useMemo(() => fllNorm(query), [query]);
+
+  const saveTeam = useCallback(team => {
+    setMyTeam(team); setQuery("");
+    try { localStorage.setItem("tc-my-team", team); } catch {}
+  }, []);
+  const clearTeam = useCallback(() => {
+    setMyTeam(null);
+    try { localStorage.removeItem("tc-my-team"); } catch {}
+  }, []);
+
+  const allTeams = useMemo(() => {
+    const set = new Set();
+    FLL_GAME_SLOTS.forEach(s => s.f.forEach(t => t && set.add(t)));
+    FLL_JUDGING.forEach(s => Object.values(s.r).forEach(t => t && set.add(t)));
+    EXPLORE_JUDGING.forEach(s => Object.values(s.r).forEach(t => t && set.add(t)));
+    EXPLORE_PITS.forEach(p => set.add(p.team));
+    return [...set].sort((a, b) => a.localeCompare(b));
+  }, []);
+
+  const matchingTeams = useMemo(() =>
+    qn ? allTeams.filter(t => fllNorm(t).includes(qn)) : allTeams,
+    [qn, allTeams]
+  );
+
+  const gameSlotsTimed = useMemo(() => FLL_GAME_SLOTS.map(s => ({ ...s, ...parseSlotMs(s.day, s.time) })), []);
+  const fllJudgeTimed  = useMemo(() => FLL_JUDGING.map(s => ({ ...s, ...parseSlotMs(s.day, s.time) })), []);
+  const expJudgeTimed  = useMemo(() => EXPLORE_JUDGING.map(s => ({ ...s, ...parseSlotMs("30.06", s.time) })), []);
+
+  const myGameSlots = useMemo(() => {
+    if (!myTeam) return [];
+    const sn = fllNorm(myTeam);
+    return gameSlotsTimed.map(slot => {
+      const fields = slot.f.reduce((acc, tm, i) => { if (tm && fllNorm(tm) === sn) acc.push(i+1); return acc; }, []);
+      return fields.length ? { ...slot, fields } : null;
+    }).filter(Boolean);
+  }, [myTeam, gameSlotsTimed]);
+
+  const myFLLJudge = useMemo(() => {
+    if (!myTeam) return null;
+    const sn = fllNorm(myTeam);
+    const s = fllJudgeTimed.find(sl => Object.values(sl.r).some(t => t && fllNorm(t) === sn));
+    if (!s) return null;
+    const room = Object.entries(s.r).find(([, t]) => t && fllNorm(t) === sn)?.[0];
+    return { ...s, room };
+  }, [myTeam, fllJudgeTimed]);
+
+  const myExpJudge = useMemo(() => {
+    if (!myTeam) return null;
+    const sn = fllNorm(myTeam);
+    const s = expJudgeTimed.find(sl => Object.values(sl.r).some(t => t && fllNorm(t) === sn));
+    if (!s) return null;
+    const room = Object.entries(s.r).find(([, t]) => t && fllNorm(t) === sn)?.[0];
+    return { ...s, room };
+  }, [myTeam, expJudgeTimed]);
+
+  const myPit = useMemo(() => {
+    if (!myTeam) return null;
+    const sn = fllNorm(myTeam);
+    return EXPLORE_PITS.find(p => fllNorm(p.team) === sn) ?? null;
+  }, [myTeam]);
+
+  const { curEvent, nxtEvent } = useMemo(() => {
+    const all = [];
+    myGameSlots.forEach(s => all.push({ start:s.start, end:s.end, label:FLL_RND[s.rnd]?.[lang]??s.rnd }));
+    if (myFLLJudge) all.push({ start:myFLLJudge.start, end:myFLLJudge.end, label:lang==="kz"?"🏆 Бағалау":lang==="ru"?"🏆 Судейство":"🏆 Judging" });
+    if (myExpJudge) all.push({ start:myExpJudge.start, end:myExpJudge.end, label:lang==="kz"?"🏆 Бағалау (Explore)":lang==="ru"?"🏆 Судейство (Explore)":"🏆 Judging (Explore)" });
+    all.sort((a,b) => a.start - b.start);
+    return {
+      curEvent: all.find(e => nowSec >= e.start && nowSec < e.end) ?? null,
+      nxtEvent: all.find(e => e.start > nowSec) ?? null,
+    };
+  }, [myGameSlots, myFLLJudge, myExpJudge, lang, nowSec]);
+
+  const fmtCd = ms => {
+    if (ms <= 0) return "00:00";
+    const h = Math.floor(ms / 3600000), m = Math.floor((ms%3600000)/60000), s = Math.floor((ms%60000)/1000);
+    return h ? `${h}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`
+             : `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+  };
+
+  const L = {
+    pick: lang==="kz"?"Командамды таңдаңыз":lang==="ru"?"Выберите вашу команду":"Select your team",
+    all:  lang==="kz"?"Барлық командалар":lang==="ru"?"Все команды":"All teams",
+    srch: lang==="kz"?"Команда іздеу...":lang==="ru"?"Поиск команды...":"Search team...",
+    chg:  lang==="kz"?"Өзгерту":lang==="ru"?"Изменить":"Change",
+    nxt:  lang==="kz"?"Келесі матч":lang==="ru"?"Следующий матч":"Next match",
+    now:  lang==="kz"?"🔴 Қазір!":lang==="ru"?"🔴 Сейчас!":"🔴 Now!",
+    done: lang==="kz"?"Барлық матчтар аяқталды ✅":lang==="ru"?"Все матчи завершены ✅":"All matches done ✅",
+    G:    lang==="kz"?"🤖 Робот Ойыны":lang==="ru"?"🤖 Игра Роботов":"🤖 Robot Game",
+    J:    lang==="kz"?"🏆 Бағалау":lang==="ru"?"🏆 Судейство":"🏆 Judging",
+    P:    lang==="kz"?"📍 Пит нөмірі":lang==="ru"?"📍 Пит номер":"📍 Pit #",
+    F:    lang==="kz"?"Алаң":lang==="ru"?"Поле":"Field",
+    R:    lang==="kz"?"Бөлме":lang==="ru"?"Комната":"Room",
+  };
+
+  const badge = (start, end, listForBefore) => {
+    const isNow  = nowSec >= start && nowSec < end;
+    const isPast = nowSec >= end;
+    const sb = listForBefore.filter(s => s.start > nowSec && s.start < start).length;
+    const ms = Math.max(0, start - nowSec);
+    if (isNow)  return <span className="np-before np-before--now">🔴 {lang==="kz"?"Қазір!":lang==="ru"?"Сейчас!":"Now!"}</span>;
+    if (isPast) return <span className="np-before np-before--past">{lang==="kz"?"Өтті":lang==="ru"?"Завершено":"Done"}</span>;
+    if (sb===0) return <span className="np-before np-before--next">⏭ {lang==="kz"?"Келесі!":lang==="ru"?"Следующий!":"Next!"}</span>;
+    return <span className="np-before">{sb} {lang==="kz"?"алда":lang==="ru"?"до вас":"ahead"} · {fmtMs(ms,lang)}</span>;
+  };
+
+  // ── PICKER ──
+  if (!myTeam) return (
+    <div className="my-team-wrap">
+      <div className="my-team-pick-title">{L.pick}</div>
+      <div className="tc-search-bar fll-search-bar">
+        <svg className="tc-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input className="tc-search-input fll-input" type="text" placeholder={L.srch}
+          value={query} onChange={e => setQuery(e.target.value)} autoComplete="off" spellCheck={false} />
+      </div>
+      {!query && <div className="fll-search-hint">{L.all} ({allTeams.length})</div>}
+      <div className="fll-team-list my-team-list">
+        {matchingTeams.map(team => (
+          <button key={team} className="fll-team-row" onClick={() => saveTeam(team)}>
+            <span className="fll-team-row-name">{team}</span>
+            <span className="fll-team-row-arr">›</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+
+  // ── SCHEDULE VIEW ──
+  return (
+    <div className="my-team-wrap">
+      <div className="my-team-header">
+        <div className="my-team-name">{myTeam}</div>
+        <button className="my-team-action" onClick={clearTeam}>{L.chg}</button>
+      </div>
+
+      {curEvent ? (
+        <div className="my-team-cd my-team-cd--live">
+          <div className="my-team-cd-label">{L.now}</div>
+          <div className="my-team-cd-event">{curEvent.label}</div>
+        </div>
+      ) : nxtEvent ? (
+        <div className="my-team-cd">
+          <div className="my-team-cd-label">{L.nxt}: {nxtEvent.label}</div>
+          <div className="my-team-cd-timer">{fmtCd(nxtEvent.start - nowSec)}</div>
+        </div>
+      ) : (
+        <div className="my-team-cd my-team-cd--done">
+          <div className="my-team-cd-label">{L.done}</div>
+        </div>
+      )}
+
+      {myGameSlots.length > 0 && (
+        <div className="fll-hit-section">
+          <div className="fll-hit-section-title">{L.G}</div>
+          {myGameSlots.map((slot, i) => (
+            <div key={i} className={`fll-hit-card fll-hit-card--game${nowSec>=slot.end?" fll-hit-card--past":""}`}>
+              <div className="fll-hit-left">
+                <div className="fll-hit-time">{slot.time}</div>
+                <div className="fll-hit-day">{slot.day}</div>
+              </div>
+              <div className="fll-hit-right">
+                <div className="fll-hit-round">{FLL_RND[slot.rnd]?.[lang]??slot.rnd}</div>
+                {slot.fields.map(fn => <div key={fn} className="fll-hit-field">{L.F} {fn}</div>)}
+                {badge(slot.start, slot.end, gameSlotsTimed)}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {myFLLJudge && (
+        <div className="fll-hit-section">
+          <div className="fll-hit-section-title">{L.J}</div>
+          <div className={`fll-hit-card fll-hit-card--judge${nowSec>=myFLLJudge.end?" fll-hit-card--past":""}`}>
+            <div className="fll-hit-left">
+              <div className="fll-hit-time">{myFLLJudge.time}</div>
+              <div className="fll-hit-day">{myFLLJudge.day}</div>
+            </div>
+            <div className="fll-hit-right">
+              <div className="fll-hit-field">{L.R} {myFLLJudge.room} · <strong>{myTeam}</strong></div>
+              {badge(myFLLJudge.start, myFLLJudge.end, fllJudgeTimed)}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {myPit && (
+        <div className="fll-hit-section">
+          <div className="fll-hit-section-title">{L.P}</div>
+          <div className="fll-hit-card fll-hit-card--pit">
+            <span className="fll-pit-num">{myPit.pit}</span>
+            <span className="fll-pit-team">{myPit.team}</span>
+          </div>
+        </div>
+      )}
+
+      {myExpJudge && (
+        <div className="fll-hit-section">
+          <div className="fll-hit-section-title">{L.J} (FLL Explore)</div>
+          <div className={`fll-hit-card fll-hit-card--judge${nowSec>=myExpJudge.end?" fll-hit-card--past":""}`}>
+            <div className="fll-hit-left">
+              <div className="fll-hit-time">{myExpJudge.time}</div>
+              <div className="fll-hit-day">30.06</div>
+            </div>
+            <div className="fll-hit-right">
+              <div className="fll-hit-field">{L.R} {myExpJudge.room} · <strong>{myTeam}</strong></div>
+              {badge(myExpJudge.start, myExpJudge.end, expJudgeTimed)}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function TechCupPage({ onClose }) {
   const t = useT();
   const { lang, setLang } = useLang();
-  const [tab, setTab] = useState("fll");
+  const [tab, setTab] = useState("myteam");
   return (
     <div className="sub-page">
       <div className="sub-page__topbar">
@@ -3055,6 +3283,7 @@ function TechCupPage({ onClose }) {
             style={tab === "chat" ? { height: "100%" } : {}}
           >
             {tab === "chat"    ? <TechCupChat /> :
+             tab === "myteam"  ? <MyTeamTab /> :
              tab === "fll"     ? <FLLTab /> :
              tab === "explore" ? <ExploreTab /> :
              tab === "ftc"     ? <FTCTab t={t} /> :
